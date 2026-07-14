@@ -11,7 +11,7 @@
  *  Returns the enemy character's last known danger location
  */
 UCLASS()
-class MIXUPPROJECT_API UEnvQueryContext_Danger : public UEnvQueryContext
+class AI_RE_API UEnvQueryContext_Danger : public UEnvQueryContext
 {
 	GENERATED_BODY()
 	
