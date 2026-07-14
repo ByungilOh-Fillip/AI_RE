@@ -17,17 +17,14 @@ assignees: ""
 ## 📐 구현 범위
 > 이 기능이 영향을 미치는 시스템을 체크해주세요.
 
-- [ ] Pal Character
-- [ ] AI Controller / Behavior Tree
-- [ ] Follow System
+- [ ] Player Character
+- [ ] AI Companion
 - [ ] Combat System
-- [ ] Capture System
-- [ ] Spawn System
-- [ ] Skill System
+- [ ] Survival System (Stat)
+- [ ] Inventory / Crafting
 - [ ] Animation
-- [ ] Replication / RPC
-- [ ] UI
-- [ ] 기타: 
+- [ ] UI / HUD
+- [ ] 기타:
 
 ## ✅ 완료 조건 (Definition of Done)
 > 이 기능이 완료되었다고 판단하는 기준을 작성해주세요.

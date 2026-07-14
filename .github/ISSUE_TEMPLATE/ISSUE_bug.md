@@ -27,10 +27,8 @@ assignees: ""
 
 ## 🖥️ 환경 정보
 
-- UE 버전: 5.
+- UE 버전: 5.8
 - 플랫폼: Windows / Mac
-- 발생 위치 (서버 / 클라이언트 / 양쪽):
-- PIE 플레이어 수:
 
 ## 📸 스크린샷 / 로그
 > 관련 스크린샷이나 Output Log를 붙여넣어주세요.
@@ -41,13 +39,13 @@ assignees: ""
 
 ## 🏷️ 관련 시스템
 
-- [ ] Pal Character
-- [ ] AI Controller / Behavior Tree
-- [ ] Follow System
+- [ ] Player Character
+- [ ] AI Companion
 - [ ] Combat System
-- [ ] Capture System
-- [ ] Spawn System
-- [ ] Replication / RPC
+- [ ] Survival System (Stat)
+- [ ] Inventory / Crafting
+- [ ] UI / HUD
+- [ ] Animation
 - [ ] 기타:
 
 ## 🔗 관련 Issue / PR
