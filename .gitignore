@@ -69,3 +69,9 @@ UEProject/Content/Art/Raw/
 # =========================
 .DS_Store
 Thumbs.db
+
+# =========================
+# Agent Customizations
+# =========================
+.agents/
+AGENTS.md

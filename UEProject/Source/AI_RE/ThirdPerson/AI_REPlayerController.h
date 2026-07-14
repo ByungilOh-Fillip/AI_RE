@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
-#include "MixUpProjectPlayerController.generated.h"
+#include "AI_REPlayerController.generated.h"
 
 class UInputMappingContext;
 class UUserWidget;
@@ -14,7 +14,7 @@ class UUserWidget;
  *  Manages input mappings
  */
 UCLASS(abstract)
-class AMixUpProjectPlayerController : public APlayerController
+class AAI_REPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 	

@@ -10,7 +10,7 @@
 #include "Engine/LocalPlayer.h"
 #include "Engine/World.h"
 #include "Blueprint/UserWidget.h"
-#include "MixUpProject.h"
+#include "AI_RE.h"
 #include "Widgets/Input/SVirtualJoystick.h"
 
 void ACombatPlayerController::BeginPlay()
@@ -57,7 +57,7 @@ void ACombatPlayerController::SetupInputComponent()
 
 		} else {
 
-			UE_LOG(LogMixUpProject, Error, TEXT("Could not spawn mobile controls widget."));
+			UE_LOG(LogAI_RE, Error, TEXT("Could not spawn mobile controls widget."));
 
 		}
 
