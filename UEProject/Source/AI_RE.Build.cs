@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class MixUpProject : ModuleRules
+public class AI_RE : ModuleRules
 {
-	public MixUpProject(ReadOnlyTargetRules Target) : base(Target)
+	public AI_RE(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
@@ -24,13 +24,13 @@ public class MixUpProject : ModuleRules
 		PrivateDependencyModuleNames.AddRange(new string[] { });
 
 		PublicIncludePaths.AddRange(new string[] {
-			"MixUpProject",
-			"MixUpProject/Variant_Combat",
-			"MixUpProject/Variant_Combat/AI",
-			"MixUpProject/Variant_Combat/Animation",
-			"MixUpProject/Variant_Combat/Gameplay",
-			"MixUpProject/Variant_Combat/Interfaces",
-			"MixUpProject/Variant_Combat/UI",
+			"AI_RE/ThirdPerson",
+			"AI_RE/ThirdPerson/Variant_Combat",
+			"AI_RE/ThirdPerson/Variant_Combat/AI",
+			"AI_RE/ThirdPerson/Variant_Combat/Animation",
+			"AI_RE/ThirdPerson/Variant_Combat/Gameplay",
+			"AI_RE/ThirdPerson/Variant_Combat/Interfaces",
+			"AI_RE/ThirdPerson/Variant_Combat/UI",
 		});
 
 		// Uncomment if you are using Slate UI

@@ -1,15 +1,15 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 
-#include "MixUpProjectPlayerController.h"
+#include "AI_REPlayerController.h"
 #include "EnhancedInputSubsystems.h"
 #include "Engine/LocalPlayer.h"
 #include "InputMappingContext.h"
 #include "Blueprint/UserWidget.h"
-#include "MixUpProject.h"
+#include "AI_RE.h"
 #include "Widgets/Input/SVirtualJoystick.h"
 
-void AMixUpProjectPlayerController::BeginPlay()
+void AAI_REPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -26,14 +26,14 @@ void AMixUpProjectPlayerController::BeginPlay()
 
 		} else {
 
-			UE_LOG(LogMixUpProject, Error, TEXT("Could not spawn mobile controls widget."));
+			UE_LOG(LogAI_RE, Error, TEXT("Could not spawn mobile controls widget."));
 
 		}
 
 	}
 }
 
-void AMixUpProjectPlayerController::SetupInputComponent()
+void AAI_REPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
 
@@ -60,7 +60,7 @@ void AMixUpProjectPlayerController::SetupInputComponent()
 	}
 }
 
-bool AMixUpProjectPlayerController::ShouldUseTouchControls() const
+bool AAI_REPlayerController::ShouldUseTouchControls() const
 {
 	// are we on a mobile platform? Should we force touch?
 	return SVirtualJoystick::ShouldDisplayTouchInterface() || bForceTouchControls;

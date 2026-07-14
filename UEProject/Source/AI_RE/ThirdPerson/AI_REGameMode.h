@@ -4,20 +4,20 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "MixUpProjectGameMode.generated.h"
+#include "AI_REGameMode.generated.h"
 
 /**
  *  Simple GameMode for a third person game
  */
 UCLASS(abstract)
-class AMixUpProjectGameMode : public AGameModeBase
+class AAI_REGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 
 public:
 	
 	/** Constructor */
-	AMixUpProjectGameMode();
+	AAI_REGameMode();
 };
 
 

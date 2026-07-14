@@ -1,6 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "MixUpProjectCharacter.h"
+#include "AI_RECharacter.h"
 #include "Engine/LocalPlayer.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -10,9 +10,9 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
-#include "MixUpProject.h"
+#include "AI_RE.h"
 
-AMixUpProjectCharacter::AMixUpProjectCharacter()
+AAI_RECharacter::AAI_RECharacter()
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -50,7 +50,7 @@ AMixUpProjectCharacter::AMixUpProjectCharacter()
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
 
-void AMixUpProjectCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void AAI_RECharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
@@ -60,19 +60,19 @@ void AMixUpProjectCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
 		// Moving
-		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AMixUpProjectCharacter::Move);
-		EnhancedInputComponent->BindAction(MouseLookAction, ETriggerEvent::Triggered, this, &AMixUpProjectCharacter::Look);
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AAI_RECharacter::Move);
+		EnhancedInputComponent->BindAction(MouseLookAction, ETriggerEvent::Triggered, this, &AAI_RECharacter::Look);
 
 		// Looking
-		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMixUpProjectCharacter::Look);
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AAI_RECharacter::Look);
 	}
 	else
 	{
-		UE_LOG(LogMixUpProject, Error, TEXT("'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
+		UE_LOG(LogAI_RE, Error, TEXT("'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
 	}
 }
 
-void AMixUpProjectCharacter::Move(const FInputActionValue& Value)
+void AAI_RECharacter::Move(const FInputActionValue& Value)
 {
 	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
@@ -81,7 +81,7 @@ void AMixUpProjectCharacter::Move(const FInputActionValue& Value)
 	DoMove(MovementVector.X, MovementVector.Y);
 }
 
-void AMixUpProjectCharacter::Look(const FInputActionValue& Value)
+void AAI_RECharacter::Look(const FInputActionValue& Value)
 {
 	// input is a Vector2D
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
@@ -90,7 +90,7 @@ void AMixUpProjectCharacter::Look(const FInputActionValue& Value)
 	DoLook(LookAxisVector.X, LookAxisVector.Y);
 }
 
-void AMixUpProjectCharacter::DoMove(float Right, float Forward)
+void AAI_RECharacter::DoMove(float Right, float Forward)
 {
 	if (GetController() != nullptr)
 	{
@@ -110,7 +110,7 @@ void AMixUpProjectCharacter::DoMove(float Right, float Forward)
 	}
 }
 
-void AMixUpProjectCharacter::DoLook(float Yaw, float Pitch)
+void AAI_RECharacter::DoLook(float Yaw, float Pitch)
 {
 	if (GetController() != nullptr)
 	{
@@ -120,13 +120,13 @@ void AMixUpProjectCharacter::DoLook(float Yaw, float Pitch)
 	}
 }
 
-void AMixUpProjectCharacter::DoJumpStart()
+void AAI_RECharacter::DoJumpStart()
 {
 	// signal the character to jump
 	Jump();
 }
 
-void AMixUpProjectCharacter::DoJumpEnd()
+void AAI_RECharacter::DoJumpEnd()
 {
 	// signal the character to stop jumping
 	StopJumping();
