@@ -24,6 +24,7 @@ public class AI_RE : ModuleRules
 		PrivateDependencyModuleNames.AddRange(new string[] { });
 
 		PublicIncludePaths.AddRange(new string[] {
+			"AI_RE/Work/LMK/Public",
 			"AI_RE/ThirdPerson",
 			"AI_RE/ThirdPerson/Variant_Combat",
 			"AI_RE/ThirdPerson/Variant_Combat/AI",
