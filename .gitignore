@@ -45,11 +45,20 @@ venv/
 ENV/
 env.bak/
 .pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.uv-cache/
 *.log
 *.model
 *.safetensors
 .ipynb_checkpoints/
 AI/datasets/
+
+# WebApp
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
 
 # =========================
 # Technical Artist (DCC Tools)
