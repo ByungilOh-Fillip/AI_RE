@@ -38,6 +38,8 @@ def build_registry() -> Registry:
         ("events/combat-started.valid.json", "event.schema.json"),
         ("memory/user-shared-event.valid.json", "memory-candidate.schema.json"),
         ("errors/ai-service-unavailable.valid.json", "error-envelope.schema.json"),
+        ("errors/request-too-large.valid.json", "error-envelope.schema.json"),
+        ("errors/duplicate-request.valid.json", "error-envelope.schema.json"),
         ("ai-service/request.valid.json", "ai-service-request.schema.json"),
         ("ai-service/result.valid.json", "ai-service-result.schema.json"),
     ],

@@ -7,6 +7,7 @@ FastAPI modular-monolith foundation for the C PC. The same application runs loca
 ```powershell
 Copy-Item .env.example .env
 uv sync --dev
+uv run alembic upgrade head
 uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
@@ -20,4 +21,20 @@ Generate separate local-only GameClient and WebClient bearer tokens before prote
 
 Place different generated values in `DEV_GAME_DEVICE_TOKEN` and `DEV_WEB_DEVICE_TOKEN` in the untracked `.env` file. M01 resolves the local Profile, Device, and Device role from these tokens. M02 replaces this development authenticator with pairing-issued tokens and hash-backed persistence.
 
-No LLM Runtime, model, or database is required for the health-only foundation. PostgreSQL, migrations, Chat/Event routes, and the concrete AIService are added by their owning tasks.
+The MVP database is `Backend/aire.db`, created by Alembic rather than application
+startup code. Apply and roll back the schema with:
+
+```powershell
+uv run alembic upgrade head
+uv run alembic downgrade base
+```
+
+SQLite runs with foreign keys, WAL and a five-second busy timeout. The Backend
+must use one worker during this MVP. PostgreSQL becomes a separate promotion and
+data-migration task if pgvector or higher write concurrency becomes required.
+
+`POST /api/v1/chat` requires the role-appropriate development bearer token.
+Offline requests use the WebClient token and RealWorld `observed_at` plus an IANA
+timezone. Set `MOCK_AI_SCENARIO` to `normal`, `timeout`, `unavailable`, or
+`invalid_output` to reproduce normalized AI paths. Request bodies and
+Authorization values are intentionally omitted from structured logs.

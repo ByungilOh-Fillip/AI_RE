@@ -35,7 +35,7 @@ Backend 담당자는 LLM 모델과 C PC GPU 사양이 확정되지 않아도 API
 │ │  ├─ Persistence                        │
 │ │  └─ AIService Interface                │
 │ ├─ Local LLM Runtime                     │
-│ └─ PostgreSQL                            │
+│ └─ SQLite (MVP)                          │
 └──────────┬───────────────────────────────┘
            │ HTTPS
            ▼
@@ -58,7 +58,7 @@ Backend 담당자는 LLM 모델과 C PC GPU 사양이 확정되지 않아도 API
 
 - FastAPI 애플리케이션 구조
 - API Request/Response와 오류 Envelope
-- PostgreSQL과 Migration
+- SQLite와 Migration. pgvector가 확정되면 PostgreSQL로 승격
 - Profile/Device/Save/Companion 데이터 범위
 - Conversation, Message, Event와 Memory 영속화
 - A/B 기기 인증과 페어링
@@ -154,7 +154,7 @@ AI_RE/
 
 ### Infrastructure Layer
 
-- PostgreSQL Repository
+- SQLAlchemy Repository와 SQLite MVP Adapter
 - 기기 Token Hash와 검증
 - Mock/Local AIService
 - Local LLM Runtime HTTP Client
@@ -373,7 +373,7 @@ companion_id
   "interaction_mode": "Offline",
   "time_context": {
     "source": "RealWorld",
-    "local_datetime": "2026-07-15T23:30:00+09:00",
+    "observed_at": "2026-07-15T23:30:00+09:00",
     "timezone": "Asia/Seoul"
   }
 }
@@ -434,9 +434,9 @@ LOG_LEVEL
 
 | 장애 | Backend 동작 | Client 기대 동작 |
 |---|---|---|
-| LLM Runtime 미실행 | 표준 `AI_UNAVAILABLE` 오류 | A 로컬 AI 유지, B 재시도 표시 |
-| LLM timeout | 요청 취소 및 `AI_TIMEOUT` | Command 실행 안 함 |
-| Structured Output 오류 | `AI_OUTPUT_INVALID` | 잘못된 Command 폐기 |
+| LLM Runtime 미실행 | 표준 `AIServiceUnavailable` 오류 | A 로컬 AI 유지, B 재시도 표시 |
+| LLM timeout | 요청 취소 및 `AIServiceTimeout` | Command 실행 안 함 |
+| Structured Output 오류 | `AIServiceInvalidOutput` | 잘못된 Command 폐기 |
 | DB 쓰기 실패 | 성공으로 가장하지 않음 | 저장 실패 표시 |
 | 중복 Event | `event_id` 기준 멱등 처리 | 정상 Ack 허용 |
 | Backend 미접속 | 응답 없음 | A 로컬 AI 유지 |
@@ -447,7 +447,7 @@ LOG_LEVEL
 
 - Mock 모드로 실행 가능한 FastAPI
 - OpenAPI/Schema와 정상·오류 Fixture
-- PostgreSQL Migration
+- SQLite Migration과 PostgreSQL 승격 기준
 - AIService Interface와 Mock 구현
 - Backend 실행 가이드와 `.env.example`
 - AI Runtime unavailable/timeout/invalid output 테스트
@@ -473,7 +473,7 @@ LOG_LEVEL
 1. `Contracts` Schema와 Fixture
 2. FastAPI 프로젝트와 `/health`
 3. 표준 오류, 설정과 로그
-4. PostgreSQL과 Migration
+4. SQLite와 Migration
 5. Mock AIService
 6. Mock `/chat`과 `/events`
 7. Profile/Device Pairing
@@ -482,6 +482,12 @@ LOG_LEVEL
 10. Local LLM Adapter 연결
 11. Memory Candidate 저장·검색·삭제
 12. A/B/C 통합 검증
+
+MVP는 C PC의 단일 사용자·단일 Backend worker를 전제로 SQLite를 사용합니다.
+SQLAlchemy 모델과 Alembic migration은 PostgreSQL 호환 타입과 명명 규칙을
+유지합니다. AI 파트가 첫 Memory MVP에 pgvector를 필수로 확정하거나 동시
+쓰기 부하가 단일 writer 범위를 넘으면 PostgreSQL 승격과 데이터 이관을 별도
+Task로 수행합니다.
 
 ## 17. 1차 제외 범위
 

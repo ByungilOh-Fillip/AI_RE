@@ -1,9 +1,38 @@
 import "./style.css";
 
-import { fetchHealth } from "./api/client";
-import { apiBaseUrl } from "./config";
+import {
+  ChatApiError,
+  createOfflineChat,
+  fetchHealth,
+  type OfflineChatRequest,
+} from "./api/client";
+import {
+  apiBaseUrl,
+  companionId,
+  saveSlotId,
+  webDeviceToken,
+} from "./config";
 
 type ConnectionState = "checking" | "connected" | "disconnected";
+
+function createStableId(prefix: string): string {
+  if (typeof crypto.randomUUID === "function") {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = ((bytes[6] ?? 0) & 0x0f) | 0x40;
+  bytes[8] = ((bytes[8] ?? 0) & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0"));
+  const uuid = [
+    hex.slice(0, 4).join(""),
+    hex.slice(4, 6).join(""),
+    hex.slice(6, 8).join(""),
+    hex.slice(8, 10).join(""),
+    hex.slice(10, 16).join(""),
+  ].join("-");
+  return `${prefix}-${uuid}`;
+}
 
 function requireElement<T extends Element>(selector: string): T {
   const element = document.querySelector<T>(selector);
@@ -97,7 +126,10 @@ const refreshButton = requireElement<HTMLButtonElement>("#refresh-connection");
 const chatMessages = requireElement<HTMLElement>("#chat-messages");
 const chatForm = requireElement<HTMLFormElement>("#chat-form");
 const chatInput = requireElement<HTMLTextAreaElement>("#chat-input");
+const sendButton = requireElement<HTMLButtonElement>("#send-button");
 const composerNotice = requireElement<HTMLElement>("#composer-notice");
+const sessionId = createStableId("session");
+let isSending = false;
 
 function setConnectionState(state: ConnectionState, label: string): void {
   statusDot.dataset.state = state;
@@ -137,6 +169,21 @@ function appendUserMessage(text: string): void {
   content.textContent = text;
   bubble.append(content);
 
+  const time = document.createElement("time");
+  time.textContent = formatCurrentTime();
+  message.append(bubble, time);
+  chatMessages.append(message);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function appendCompanionMessage(text: string): void {
+  const message = document.createElement("article");
+  message.className = "message companion-message";
+  const bubble = document.createElement("div");
+  bubble.className = "message-bubble";
+  const content = document.createElement("p");
+  content.textContent = text;
+  bubble.append(content);
   const time = document.createElement("time");
   time.textContent = formatCurrentTime();
   message.append(bubble, time);
@@ -185,15 +232,62 @@ chatInput.addEventListener("input", () => {
 
 chatForm.addEventListener("submit", (event) => {
   event.preventDefault();
+  if (isSending) {
+    return;
+  }
   const message = chatInput.value.trim();
   if (message.length === 0) {
     return;
   }
 
+  if (webDeviceToken.length === 0) {
+    showComposerNotice("개발용 Web Device Token을 WebApp .env에 설정해 주세요.");
+    return;
+  }
+
+  isSending = true;
+  sendButton.disabled = true;
+  chatInput.disabled = true;
+  composerNotice.hidden = true;
   appendUserMessage(message);
   chatInput.value = "";
   chatInput.style.height = "auto";
-  showComposerNotice("대화 API가 연결되면 AIRE의 답변이 여기에 표시돼요.");
+  const requestId = createStableId("request");
+  const request: OfflineChatRequest = {
+    schema_version: 1,
+    request_id: requestId,
+    save_slot_id: saveSlotId,
+    companion_id: companionId,
+    session_id: sessionId,
+    interaction_mode: "Offline",
+    message_id: createStableId("message"),
+    user_message: message,
+    time_context: {
+      source: "RealWorld",
+      observed_at: new Date().toISOString(),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+    },
+    recent_event_ids: [],
+  };
+
+  void createOfflineChat(apiBaseUrl, webDeviceToken, request)
+    .then((response) => {
+      appendCompanionMessage(response.display_text);
+    })
+    .catch((error: unknown) => {
+      if (error instanceof ChatApiError) {
+        const retryHint = error.retryable ? " 잠시 후 다시 시도해 주세요." : "";
+        showComposerNotice(`대화 요청에 실패했어요 (${error.code}).${retryHint}`);
+        return;
+      }
+      showComposerNotice("C PC와 대화 요청을 주고받지 못했어요.");
+    })
+    .finally(() => {
+      isSending = false;
+      sendButton.disabled = false;
+      chatInput.disabled = false;
+      chatInput.focus();
+    });
 });
 
 refreshButton.addEventListener("click", () => {
