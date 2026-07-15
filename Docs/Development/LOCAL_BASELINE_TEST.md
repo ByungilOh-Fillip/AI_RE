@@ -16,19 +16,20 @@
 - Backend 테스트와 Python 의존성 잠금 파일
 - Vite와 Strict TypeScript 기반 모바일 WebApp
 - Backend 연결 상태, 대화/기억 탭, 로컬 메시지 입력 UI
+- 인증된 Mock Offline Chat과 SQLite 대화 저장
+- 표준 오류 Envelope, 요청 추적과 민감정보 비기록 로그
 - WebApp 의존성 잠금 파일과 프로덕션 빌드 설정
 
 ### 미포함 범위
 
-- 실제 Chat API와 AI 답변
-- 대화 세션 및 데이터베이스 저장
+- 실제 Local LLM 답변
 - 장기 기억 조회, 저장, 삭제
 - 기기 Pairing API와 Pairing UI
 - 실제 Local LLM Runtime 연동
 - C PC의 WebApp 정적 호스팅 구성
 - Unreal HTTP 통신과 StateTree 명령 연동
 
-WebApp에서 메시지를 전송하면 사용자 메시지는 로컬 화면에 추가되지만, 현재는 실제 Backend 요청을 보내지 않습니다. `대화 API가 연결되면 AIRE의 답변이 여기에 표시돼요.`라는 안내가 나타나는 것이 정상입니다.
+WebApp에서 메시지를 전송하면 인증된 `POST /api/v1/chat` 요청을 보내고 Mock AI 답변을 표시합니다. 동일 `request_id` 재전송은 저장된 응답을 반환하며 다른 내용으로 ID를 재사용하면 거부됩니다.
 
 ## 2. 최초 1회 준비
 
@@ -55,6 +56,7 @@ cd ..
 첫 번째 PowerShell에서 저장소 루트를 작업 경로로 사용합니다.
 
 ```powershell
+uv --directory Backend run alembic upgrade head
 uv --directory Backend run uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
@@ -77,9 +79,14 @@ http://127.0.0.1:8000/health
 
 현재 Health 테스트에는 `.env` 또는 LLM Runtime이 필요하지 않습니다. 이후 보호 API를 테스트할 때는 `Backend/.env.example`을 `Backend/.env`로 복사하고 GameClient와 WebClient에 서로 다른 개발용 토큰을 설정합니다. 실제 토큰이 들어 있는 `.env`는 Git에 커밋하지 않습니다.
 
+`alembic upgrade head`는 최초 실행과 schema 변경 후 다시 적용합니다.
+
 ### 3.2 WebApp 실행
 
 두 번째 PowerShell에서 실행합니다.
+
+`WebApp/.env.example`을 `.env`로 복사하고 `VITE_DEV_WEB_DEVICE_TOKEN`에
+Backend의 `DEV_WEB_DEVICE_TOKEN`과 같은 개발 전용 값을 설정합니다.
 
 ```powershell
 cd WebApp
@@ -101,7 +108,9 @@ WebApp 개발 서버는 `/health`와 `/api` 요청을 로컬 Backend의 `http://
 - 대화 탭과 기억 탭이 서로 전환됩니다.
 - 추천 대화를 누르면 입력란에 문구가 들어갑니다.
 - 직접 작성한 메시지를 전송하면 대화 목록에 추가됩니다.
-- 실제 Chat API가 없다는 안내가 표시됩니다.
+- 전송 중 입력과 전송 버튼이 잠겨 중복 클릭이 차단됩니다.
+- Mock AI 답변이 동료 메시지로 추가됩니다.
+- 인증 또는 AI 오류가 빈 성공 대사가 아니라 오류 코드와 함께 표시됩니다.
 - Backend를 종료하고 연결 새로고침 버튼을 누르면 연결 실패 상태가 표시됩니다.
 - Backend를 다시 실행하고 새로고침하면 연결 상태가 복구됩니다.
 

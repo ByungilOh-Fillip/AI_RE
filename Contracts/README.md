@@ -25,6 +25,14 @@ This directory is the executable source of truth for data exchanged between the 
 - M01 uses separate GameClient and WebClient development tokens from the local `.env` file. M02 replaces them with pairing-issued device tokens.
 - Tokens never appear in Contracts fixtures, logs, URLs, or committed configuration.
 
+## Request correlation and idempotency
+
+- Clients may send `X-Request-ID`; when a body also has `request_id`, the values must match.
+- When the header is absent, a body `request_id` becomes the effective correlation ID; requests without either receive a Backend UUID.
+- The effective value is returned in `X-Request-ID`, error envelopes and structured request logs.
+- Repeating the same authenticated Profile plus `request_id` and identical content returns the stored Chat response.
+- Reusing that key with different content returns `DuplicateRequest` without creating messages.
+
 ## Initial scope
 
 The initial contract covers health, capabilities, Chat, Event, Command candidates, Memory candidates, the AIService boundary, and the shared error envelope. Pairing and persistence contracts will be added in their owning tasks.

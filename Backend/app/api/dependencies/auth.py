@@ -1,9 +1,10 @@
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.domain.identity import AuthenticatedDevice
+from app.api.errors.models import APIError, ErrorCode
 from app.infrastructure.security.development_authenticator import (
     DevelopmentAuthenticationNotConfiguredError,
     DevelopmentDeviceAuthenticator,
@@ -22,21 +23,25 @@ def get_authenticated_device(
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> AuthenticatedDevice:
     if credentials is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Device bearer token is required.",
+        raise APIError(
+            status_code=401,
+            code=ErrorCode.UNAUTHORIZED_DEVICE,
+            message="Device bearer token is required.",
         )
 
     authenticator = DevelopmentDeviceAuthenticator(settings)
     try:
         return authenticator.authenticate(credentials.credentials)
     except DevelopmentAuthenticationNotConfiguredError as error:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Development authentication is not configured.",
+        raise APIError(
+            status_code=503,
+            code=ErrorCode.AUTHENTICATION_UNAVAILABLE,
+            message="Development authentication is not configured.",
+            retryable=False,
         ) from error
     except InvalidDeviceTokenError as error:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Device bearer token is invalid.",
+        raise APIError(
+            status_code=401,
+            code=ErrorCode.UNAUTHORIZED_DEVICE,
+            message="Device bearer token is invalid.",
         ) from error

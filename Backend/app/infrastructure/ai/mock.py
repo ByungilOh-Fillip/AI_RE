@@ -7,7 +7,17 @@ from app.application.models.ai import (
 
 
 class MockAIService:
+    def __init__(self, scenario: str = "normal") -> None:
+        self._scenario = scenario
+
     async def generate_chat(self, request: AIServiceRequest) -> AIServiceResult:
+        if self._scenario == "timeout":
+            await asyncio.sleep(3600)
+        if self._scenario == "unavailable":
+            raise AIServiceUnavailableError
+        if self._scenario == "invalid_output":
+            raise AIServiceInvalidOutputError
+
         display_text = (
             "현실 시간 기준의 Mock 응답이야."
             if request.interaction_mode is InteractionMode.OFFLINE
@@ -22,3 +32,9 @@ class MockAIService:
                 prompt_version="mock-v1",
             ),
         )
+import asyncio
+
+from app.application.errors import (
+    AIServiceInvalidOutputError,
+    AIServiceUnavailableError,
+)

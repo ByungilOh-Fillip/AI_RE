@@ -10,6 +10,8 @@
 | `events/combat-started.valid.json` | Valid meaningful game event |
 | `memory/user-shared-event.valid.json` | Valid source-backed memory candidate |
 | `errors/ai-service-unavailable.valid.json` | Valid stable unavailable error |
+| `errors/request-too-large.valid.json` | Valid request size limit error |
+| `errors/duplicate-request.valid.json` | Valid conflicting idempotency key error |
 | `ai-service/request.valid.json` | Valid provider-independent AIService input without authentication data |
 | `ai-service/result.valid.json` | Valid normalized AIService output |
 

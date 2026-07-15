@@ -39,5 +39,5 @@ def get_capabilities(
     return CapabilitiesResponse(
         schema_version=settings.schema_version,
         ai_mode=settings.ai_mode,
-        capabilities=["Health", "MockFoundation"],
+        capabilities=["Health", "MockChat", "SQLitePersistence"],
     )

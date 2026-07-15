@@ -14,6 +14,9 @@ paths:
       responses:
         "200":
           description: Backend process is available.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
           content:
             application/json:
               schema:
@@ -25,6 +28,9 @@ paths:
       responses:
         "200":
           description: Features exposed by the current Backend mode.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
           content:
             application/json:
               schema:
@@ -35,6 +41,8 @@ paths:
       tags: [Chat]
       security:
         - DeviceBearer: []
+      parameters:
+        - $ref: "#/components/parameters/RequestIdHeader"
       requestBody:
         required: true
         content:
@@ -44,6 +52,9 @@ paths:
       responses:
         "200":
           description: Normalized dialogue and optional untrusted candidates.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
           content:
             application/json:
               schema:
@@ -52,7 +63,17 @@ paths:
           $ref: "#/components/responses/ContractError"
         "401":
           $ref: "#/components/responses/ContractError"
+        "403":
+          $ref: "#/components/responses/ContractError"
+        "409":
+          $ref: "#/components/responses/ContractError"
+        "413":
+          $ref: "#/components/responses/ContractError"
+        "500":
+          $ref: "#/components/responses/ContractError"
         "503":
+          $ref: "#/components/responses/ContractError"
+        "504":
           $ref: "#/components/responses/ContractError"
   /api/v1/events:
     post:
@@ -91,6 +112,28 @@ paths:
         "401":
           $ref: "#/components/responses/ContractError"
 components:
+  parameters:
+    RequestIdHeader:
+      name: X-Request-ID
+      in: header
+      required: false
+      description: >-
+        Optional transport correlation ID. When a request body also contains
+        request_id, both values must match. When the header is absent, a body
+        request_id becomes effective; requests without either receive a Backend
+        UUID. The effective value is returned in X-Request-ID.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+        pattern: "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+  headers:
+    RequestId:
+      description: Effective request correlation ID.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
   securitySchemes:
     DeviceBearer:
       type: http
@@ -103,6 +146,9 @@ components:
   responses:
     ContractError:
       description: Stable error envelope.
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/RequestId"
       content:
         application/json:
           schema:

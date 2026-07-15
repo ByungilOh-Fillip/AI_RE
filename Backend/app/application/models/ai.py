@@ -1,6 +1,7 @@
 from datetime import datetime
 from enum import StrEnum
 from typing import Annotated, Literal, Self
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
 
@@ -35,6 +36,16 @@ class RealWorldTimeContext(StrictModel):
     source: Literal["RealWorld"] = "RealWorld"
     observed_at: datetime
     timezone: str = Field(min_length=1, max_length=64)
+
+    @model_validator(mode="after")
+    def validate_real_world_time(self) -> Self:
+        if self.observed_at.tzinfo is None or self.observed_at.utcoffset() is None:
+            raise ValueError("RealWorld observed_at must include a UTC offset.")
+        try:
+            ZoneInfo(self.timezone)
+        except ZoneInfoNotFoundError as error:
+            raise ValueError("RealWorld timezone must be a valid IANA name.") from error
+        return self
 
 
 TimeContext = Annotated[

@@ -385,6 +385,11 @@ button {
   width: 18px;
 }
 
+.send-button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
 .composer-notice {
   margin: 8px 4px 0;
   color: var(--muted);
