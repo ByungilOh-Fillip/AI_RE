@@ -13,7 +13,8 @@
 #include "AI_RE.h"
 #include "PlayerCombatComponent.h"
 #include "PlayerInventoryComponent.h"
-#include "PlayerSurvivalComponent.h"
+#include "StatusComponent.h"
+#include "SkillComponent.h"
 #include "Engine/Engine.h"
 
 AAI_RECharacter::AAI_RECharacter()
@@ -52,7 +53,8 @@ AAI_RECharacter::AAI_RECharacter()
 
 	// Component Define
 	
-	SurvivalComponent = CreateDefaultSubobject<UPlayerSurvivalComponent>(TEXT("SurvivalComponent"));
+	StatusComponent = CreateDefaultSubobject<UStatusComponent>(TEXT("StatusComponent"));
+	SkillComponent = CreateDefaultSubobject<USkillComponent>(TEXT("SkillComponent"));
 	InventoryComponent = CreateDefaultSubobject<UPlayerInventoryComponent>(TEXT("InventoryComponent"));
 	CombatComponent = CreateDefaultSubobject<UPlayerCombatComponent>(TEXT("CombatComponent"));
 	
@@ -150,7 +152,7 @@ void AAI_RECharacter::DoJumpEnd()
 
 void AAI_RECharacter::StartSprint()
 {
-	if (SurvivalComponent -> GetCurrentSP() > 10.f)
+	if (StatusComponent->CurrentSP > 10.f)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("On Start Sprint"));
 		GetCharacterMovement() -> MaxWalkSpeed = 800.f;
