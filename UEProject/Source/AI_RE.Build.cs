@@ -32,6 +32,8 @@ public class AI_RE : ModuleRules
 			"AI_RE/OBI/ThirdPerson/Variant_Combat/Interfaces",
 			"AI_RE/OBI/ThirdPerson/Variant_Combat/UI",
 			"AI_RE/OBI/Component/Public"
+			"AI_RE/Work/LMK/Public",
+			
 		});
 
 		// Uncomment if you are using Slate UI
