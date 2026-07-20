@@ -10,13 +10,14 @@
 
 - FastAPI 애플리케이션 골격
 - `GET /health`, `GET /api/v1/system/capabilities`
-- GameClient와 WebClient 개발용 토큰 인증 구조
+- GameClient Bootstrap 등록과 Pairing 기반 영속 Device 인증
 - 타입 기반 `AIService` Port와 Mock 구현
 - OpenAPI, JSON Schema, Fixture 계약
 - Backend 테스트와 Python 의존성 잠금 파일
 - Vite와 Strict TypeScript 기반 모바일 WebApp
 - Backend 연결 상태, 대화/기억 탭, 로컬 메시지 입력 UI
 - 인증된 Mock Offline Chat과 SQLite 대화 저장
+- SQLite 기반 Device 조회·폐기와 폐기 Token 차단
 - 표준 오류 Envelope, 요청 추적과 민감정보 비기록 로그
 - WebApp 의존성 잠금 파일과 프로덕션 빌드 설정
 
@@ -24,7 +25,7 @@
 
 - 실제 Local LLM 답변
 - 장기 기억 조회, 저장, 삭제
-- 기기 Pairing API와 Pairing UI
+- WebApp Pairing UI와 브라우저 Token 영속 보관
 - 실제 Local LLM Runtime 연동
 - C PC의 WebApp 정적 호스팅 구성
 - Unreal HTTP 통신과 StateTree 명령 연동
@@ -85,8 +86,9 @@ http://127.0.0.1:8000/health
 
 두 번째 PowerShell에서 실행합니다.
 
-`WebApp/.env.example`을 `.env`로 복사하고 `VITE_DEV_WEB_DEVICE_TOKEN`에
-Backend의 `DEV_WEB_DEVICE_TOKEN`과 같은 개발 전용 값을 설정합니다.
+먼저 Swagger UI에서 GameClient 등록과 Pairing 흐름을 실행하고 반환된 WebClient
+Token을 `WebApp/.env`의 `VITE_DEV_WEB_DEVICE_TOKEN`에 임시로 설정합니다. 변수명은
+WebApp Pairing UI가 추가되기 전까지 호환 목적으로 유지합니다.
 
 ```powershell
 cd WebApp

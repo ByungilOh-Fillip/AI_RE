@@ -14,6 +14,66 @@ class ProfileModel(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
+class DeviceModel(Base):
+    __tablename__ = "devices"
+    __table_args__ = (
+        UniqueConstraint("token_lookup_id", name="uq_devices_token_lookup"),
+        UniqueConstraint("creation_request_id", name="uq_devices_creation_request"),
+        UniqueConstraint(
+            "game_registration_key",
+            name="uq_devices_single_game_registration",
+        ),
+    )
+
+    device_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    profile_id: Mapped[str] = mapped_column(
+        ForeignKey("profiles.profile_id"),
+        index=True,
+    )
+    role: Mapped[str] = mapped_column(String(16), index=True)
+    token_lookup_id: Mapped[str] = mapped_column(String(128))
+    token_hash: Mapped[str] = mapped_column(String(64))
+    creation_request_id: Mapped[str] = mapped_column(String(128))
+    game_registration_key: Mapped[str | None] = mapped_column(String(32))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class PairingCodeModel(Base):
+    __tablename__ = "pairing_codes"
+    __table_args__ = (
+        UniqueConstraint(
+            "profile_id",
+            "issue_request_id",
+            name="uq_pairing_codes_profile_issue_request",
+        ),
+        UniqueConstraint(
+            "redeemed_request_id",
+            name="uq_pairing_codes_redeemed_request",
+        ),
+    )
+
+    pairing_code_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    profile_id: Mapped[str] = mapped_column(
+        ForeignKey("profiles.profile_id"),
+        index=True,
+    )
+    issuing_device_id: Mapped[str] = mapped_column(
+        ForeignKey("devices.device_id"),
+        index=True,
+    )
+    code_hash: Mapped[str] = mapped_column(String(64))
+    issue_request_id: Mapped[str] = mapped_column(String(128))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    redeemed_request_id: Mapped[str | None] = mapped_column(String(128))
+    paired_device_id: Mapped[str | None] = mapped_column(
+        ForeignKey("devices.device_id")
+    )
+
+
 class SaveSlotModel(Base):
     __tablename__ = "save_slots"
 

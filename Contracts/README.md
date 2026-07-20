@@ -22,7 +22,8 @@ This directory is the executable source of truth for data exchanged between the 
 - There is no multi-user `user_id`. C owns one local `profile_id` and scopes data by `save_slot_id` and `companion_id`.
 - C resolves `profile_id`, `device_id`, and the Device role from the bearer token.
 - Client-provided `profile_id` and `device_id` are optional claims. When present, C compares them with the authenticated identity and rejects a mismatch.
-- M01 uses separate GameClient and WebClient development tokens from the local `.env` file. M02 replaces them with pairing-issued device tokens.
+- The local GameClient development token is accepted only by `register-game` as a bootstrap credential.
+- Registered GameClient and paired WebClient tokens are validated from persisted HMAC-SHA256 hashes. Raw tokens and Pairing Codes are never stored.
 - Tokens never appear in Contracts fixtures, logs, URLs, or committed configuration.
 
 ## Request correlation and idempotency
@@ -35,4 +36,4 @@ This directory is the executable source of truth for data exchanged between the 
 
 ## Initial scope
 
-The initial contract covers health, capabilities, Chat, Event, Command candidates, Memory candidates, the AIService boundary, and the shared error envelope. Pairing and persistence contracts will be added in their owning tasks.
+The contract covers health, capabilities, persistent Device Pairing, Chat, Event, Command candidates, Memory candidates, the AIService boundary, and the shared error envelope.
