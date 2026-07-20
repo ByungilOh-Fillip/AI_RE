@@ -10,7 +10,15 @@
 | `events/combat-started.valid.json` | Valid meaningful game event |
 | `memory/user-shared-event.valid.json` | Valid source-backed memory candidate |
 | `errors/ai-service-unavailable.valid.json` | Valid stable unavailable error |
-| `ai-service/request.valid.json` | Valid provider-independent AIService input without authentication data |
-| `ai-service/result.valid.json` | Valid normalized AIService output |
+| `errors/request-too-large.valid.json` | Valid request size limit error |
+| `errors/duplicate-request.valid.json` | Valid conflicting idempotency key error |
+| `ai-service/request.valid.json` | Valid provider-independent AIService v2 normal input without authentication data |
+| `ai-service/result.valid.json` | Valid normalized general-conversation Mock output |
+| `ai-service/request.command.valid.json` | Valid InGame input with one allowed Command |
+| `ai-service/result.command.valid.json` | Valid allowed Command Candidate Mock output |
+| `ai-service/request.memory.valid.json` | Valid Offline input with a current Message source |
+| `ai-service/result.memory.valid.json` | Valid source-backed Memory Candidate Mock output |
+| `devices/me.valid.json` | Valid active WebClient self identity without credentials |
+| `devices/revoke-me.valid.json` | Valid WebClient self-revocation result |
 
 Semantic checks such as command expiry, duplicate IDs, target validity, and source existence are application validations in addition to JSON Schema validation.

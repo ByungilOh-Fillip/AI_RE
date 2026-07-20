@@ -14,5 +14,7 @@
     "observed_at": "2026-07-15T13:00:00+09:00",
     "timezone": "Asia/Seoul"
   },
-  "recent_event_ids": []
+  "recent_event_ids": [],
+  "game_context": {},
+  "allowed_commands": []
 }

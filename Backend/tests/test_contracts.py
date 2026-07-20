@@ -38,8 +38,16 @@ def build_registry() -> Registry:
         ("events/combat-started.valid.json", "event.schema.json"),
         ("memory/user-shared-event.valid.json", "memory-candidate.schema.json"),
         ("errors/ai-service-unavailable.valid.json", "error-envelope.schema.json"),
+        ("errors/request-too-large.valid.json", "error-envelope.schema.json"),
+        ("errors/duplicate-request.valid.json", "error-envelope.schema.json"),
         ("ai-service/request.valid.json", "ai-service-request.schema.json"),
         ("ai-service/result.valid.json", "ai-service-result.schema.json"),
+        ("ai-service/request.command.valid.json", "ai-service-request.schema.json"),
+        ("ai-service/result.command.valid.json", "ai-service-result.schema.json"),
+        ("ai-service/request.memory.valid.json", "ai-service-request.schema.json"),
+        ("ai-service/result.memory.valid.json", "ai-service-result.schema.json"),
+        ("devices/register-game.valid.json", "register-game-request.schema.json"),
+        ("devices/pair.valid.json", "pair-device-request.schema.json"),
     ],
 )
 def test_valid_fixture_matches_schema(fixture_path: str, schema_name: str) -> None:
@@ -67,6 +75,39 @@ def test_missing_time_context_fixture_is_rejected() -> None:
         )
 
 
+def test_ai_service_fixtures_exclude_sensitive_identity_and_credentials() -> None:
+    forbidden_keys = {
+        "authorization",
+        "connectionstring",
+        "databaseconnectionstring",
+        "databaseurl",
+        "deviceid",
+        "pairingcode",
+        "password",
+        "profileid",
+        "secret",
+        "token",
+    }
+
+    def assert_safe(value: Any) -> None:
+        if isinstance(value, dict):
+            for key, nested_value in value.items():
+                normalized_key = "".join(
+                    character
+                    for character in key.casefold()
+                    if character.isalnum()
+                )
+                assert normalized_key not in forbidden_keys
+                assert not normalized_key.endswith(("password", "secret", "token"))
+                assert_safe(nested_value)
+        elif isinstance(value, list):
+            for nested_value in value:
+                assert_safe(nested_value)
+
+    for fixture_path in (FIXTURES_ROOT / "ai-service").glob("*.json"):
+        assert_safe(load_json(fixture_path))
+
+
 def test_openapi_document_and_external_refs_exist() -> None:
     openapi_path = CONTRACTS_ROOT / "openapi.yaml"
     document = yaml.safe_load(openapi_path.read_text(encoding="utf-8"))
@@ -74,6 +115,10 @@ def test_openapi_document_and_external_refs_exist() -> None:
     assert document["openapi"] == "3.1.0"
     assert "/health" in document["paths"]
     assert "/api/v1/chat" in document["paths"]
+    assert "/api/v1/devices/register-game" in document["paths"]
+    assert "/api/v1/devices/pairing-codes" in document["paths"]
+    assert "/api/v1/devices/pair" in document["paths"]
+    assert "/api/v1/devices/me" in document["paths"]
 
     def collect_external_refs(value: Any) -> list[str]:
         if isinstance(value, dict):
@@ -96,3 +141,24 @@ def test_openapi_document_and_external_refs_exist() -> None:
     for reference in collect_external_refs(document):
         relative_path = reference.split("#", maxsplit=1)[0]
         assert (CONTRACTS_ROOT / relative_path).is_file()
+
+
+@pytest.mark.parametrize(
+    ("fixture_name", "definition_name"),
+    [
+        ("me.valid.json", "deviceSelfResponse"),
+        ("revoke-me.valid.json", "deviceRevocationResponse"),
+    ],
+)
+def test_device_response_fixture_matches_schema(
+    fixture_name: str,
+    definition_name: str,
+) -> None:
+    schema = load_json(SCHEMAS_ROOT / "device-pairing.schema.json")
+    validator = Draft202012Validator(
+        {"$ref": f"{schema['$id']}#/$defs/{definition_name}"},
+        registry=build_registry(),
+        format_checker=FormatChecker(),
+    )
+
+    validator.validate(load_json(FIXTURES_ROOT / "devices" / fixture_name))
