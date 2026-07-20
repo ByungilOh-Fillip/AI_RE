@@ -27,11 +27,9 @@ class Settings(BaseSettings):
         "unavailable",
         "invalid_output",
     ] = "normal"
-    dev_profile_id: str = "profile-local-001"
-    dev_game_device_id: str = "device-game-001"
-    dev_web_device_id: str = "device-phone-001"
     dev_game_device_token: SecretStr | None = None
-    dev_web_device_token: SecretStr | None = None
+    device_credential_pepper: SecretStr | None = None
+    pairing_code_ttl_seconds: int = Field(default=300, ge=60, le=3600)
 
 
 @lru_cache

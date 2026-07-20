@@ -19,7 +19,7 @@ Generate separate local-only GameClient and WebClient bearer tokens before prote
 [Convert]::ToHexString([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
 ```
 
-Place different generated values in `DEV_GAME_DEVICE_TOKEN` and `DEV_WEB_DEVICE_TOKEN` in the untracked `.env` file. M01 resolves the local Profile, Device, and Device role from these tokens. M02 replaces this development authenticator with pairing-issued tokens and hash-backed persistence.
+Place generated values in `DEV_GAME_DEVICE_TOKEN` and `DEVICE_CREDENTIAL_PEPPER` in the untracked `.env` file. The Game token is accepted only by `POST /api/v1/devices/register-game`; the pepper protects persisted Device Token and Pairing Code hashes. Pairing-issued raw credentials are returned by their creation response and are never stored or logged.
 
 The MVP database is `Backend/aire.db`, created by Alembic rather than application
 startup code. Apply and roll back the schema with:
@@ -33,7 +33,7 @@ SQLite runs with foreign keys, WAL and a five-second busy timeout. The Backend
 must use one worker during this MVP. PostgreSQL becomes a separate promotion and
 data-migration task if pgvector or higher write concurrency becomes required.
 
-`POST /api/v1/chat` requires the role-appropriate development bearer token.
+`POST /api/v1/chat` requires a registered GameClient or paired WebClient bearer token.
 Offline requests use the WebClient token and RealWorld `observed_at` plus an IANA
 timezone. Set `MOCK_AI_SCENARIO` to `normal`, `timeout`, `unavailable`, or
 `invalid_output` to reproduce normalized AI paths. Request bodies and

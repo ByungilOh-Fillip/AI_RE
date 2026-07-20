@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from app.api.errors.handlers import register_error_handlers
 from app.api.middleware.request_context import RequestContextMiddleware
 from app.api.routes.chat import router as chat_router
+from app.api.routes.devices import router as devices_router
 from app.api.routes.system import router as system_router
 from app.infrastructure.database.connection import Database
 from app.infrastructure.logging import configure_logging
@@ -39,6 +40,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.include_router(system_router)
     app.include_router(chat_router)
+    app.include_router(devices_router)
     return app
 
 

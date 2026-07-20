@@ -42,6 +42,8 @@ def build_registry() -> Registry:
         ("errors/duplicate-request.valid.json", "error-envelope.schema.json"),
         ("ai-service/request.valid.json", "ai-service-request.schema.json"),
         ("ai-service/result.valid.json", "ai-service-result.schema.json"),
+        ("devices/register-game.valid.json", "register-game-request.schema.json"),
+        ("devices/pair.valid.json", "pair-device-request.schema.json"),
     ],
 )
 def test_valid_fixture_matches_schema(fixture_path: str, schema_name: str) -> None:
@@ -76,6 +78,9 @@ def test_openapi_document_and_external_refs_exist() -> None:
     assert document["openapi"] == "3.1.0"
     assert "/health" in document["paths"]
     assert "/api/v1/chat" in document["paths"]
+    assert "/api/v1/devices/register-game" in document["paths"]
+    assert "/api/v1/devices/pairing-codes" in document["paths"]
+    assert "/api/v1/devices/pair" in document["paths"]
 
     def collect_external_refs(value: Any) -> list[str]:
         if isinstance(value, dict):

@@ -24,7 +24,14 @@ def test_migration_upgrade_and_downgrade(
                 "SELECT name FROM sqlite_master WHERE type = 'table'"
             )
         }
-    assert {"profiles", "conversations", "messages", "chat_requests"} <= tables
+    assert {
+        "profiles",
+        "devices",
+        "pairing_codes",
+        "conversations",
+        "messages",
+        "chat_requests",
+    } <= tables
 
     command.downgrade(config, "base")
     with sqlite3.connect(database_path) as connection:

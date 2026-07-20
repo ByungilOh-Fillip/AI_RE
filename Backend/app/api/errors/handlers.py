@@ -17,8 +17,13 @@ from app.application.errors import (
     AIServiceTimeoutError,
     AIServiceUnavailableError,
     DeviceRoleNotAllowedError,
+    DeviceAlreadyRegisteredError,
+    DeviceNotFoundError,
     DuplicateRequestError,
+    ExpiredPairingCodeError,
     IdentityScopeMismatchError,
+    InvalidPairingCodeError,
+    UsedPairingCodeError,
 )
 
 logger = logging.getLogger("aire.backend")
@@ -65,6 +70,36 @@ def register_error_handlers(app: FastAPI) -> None:
             403,
             ErrorCode.UNAUTHORIZED_DEVICE,
             "Device role is not allowed for this interaction mode.",
+            False,
+        ),
+        DeviceAlreadyRegisteredError: (
+            409,
+            ErrorCode.DEVICE_ALREADY_REGISTERED,
+            "A GameClient is already registered.",
+            False,
+        ),
+        DeviceNotFoundError: (
+            404,
+            ErrorCode.DEVICE_NOT_FOUND,
+            "The requested device was not found.",
+            False,
+        ),
+        InvalidPairingCodeError: (
+            400,
+            ErrorCode.INVALID_PAIRING_CODE,
+            "The pairing code is invalid.",
+            False,
+        ),
+        ExpiredPairingCodeError: (
+            410,
+            ErrorCode.EXPIRED_PAIRING_CODE,
+            "The pairing code has expired.",
+            False,
+        ),
+        UsedPairingCodeError: (
+            409,
+            ErrorCode.USED_PAIRING_CODE,
+            "The pairing code has already been used.",
             False,
         ),
         AIServiceUnavailableError: (
