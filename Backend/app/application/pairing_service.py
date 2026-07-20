@@ -15,6 +15,7 @@ from app.application.models.pairing import (
     CreatePairingCodeRequest,
     DeviceListResponse,
     DeviceRevocationResponse,
+    DeviceSelfResponse,
     DeviceTokenResponse,
     DeviceView,
     PairDeviceRequest,
@@ -180,6 +181,35 @@ class PairingService:
             devices=[self._device_view(device) for device in devices],
         )
 
+    async def get_current_device(
+        self, request_id: str, identity: AuthenticatedDevice
+    ) -> DeviceSelfResponse:
+        self._require_web(identity)
+        return DeviceSelfResponse(
+            request_id=request_id,
+            profile_id=identity.profile_id,
+            device_id=identity.device_id,
+        )
+
+    async def revoke_current_device(
+        self,
+        request_id: str,
+        identity: AuthenticatedDevice,
+    ) -> DeviceRevocationResponse:
+        self._require_web(identity)
+        device = await self._repository.get_device(identity.device_id)
+        if device is None:
+            raise DeviceNotFoundError
+        if device.profile_id != identity.profile_id:
+            raise IdentityScopeMismatchError
+        if device.revoked_at is None:
+            device.revoked_at = datetime.now(timezone.utc)
+            await self._repository.commit()
+        return DeviceRevocationResponse(
+            request_id=request_id,
+            device_id=identity.device_id,
+        )
+
     async def revoke_device(
         self,
         request_id: str,
@@ -283,6 +313,11 @@ class PairingService:
     @staticmethod
     def _require_game(identity: AuthenticatedDevice) -> None:
         if identity.role is not DeviceRole.GAME_CLIENT:
+            raise DeviceRoleNotAllowedError
+
+    @staticmethod
+    def _require_web(identity: AuthenticatedDevice) -> None:
+        if identity.role is not DeviceRole.WEB_CLIENT:
             raise DeviceRoleNotAllowedError
 
     @staticmethod

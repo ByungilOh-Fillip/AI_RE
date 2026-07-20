@@ -277,6 +277,91 @@ def test_registration_reuses_existing_single_profile(tmp_path: Path) -> None:
     assert registered["profile_id"] == "existing-profile"
 
 
+def test_web_client_can_inspect_and_revoke_only_itself(tmp_path: Path) -> None:
+    database_url = f"sqlite+aiosqlite:///{(tmp_path / 'self-device.db').as_posix()}"
+    asyncio.run(create_schema(database_url))
+    settings = make_settings(database_url)
+
+    with TestClient(create_app(settings)) as client:
+        game = register_game(client)
+        issued = issue_pairing_code(client, game["device_token"])
+        paired = client.post(
+            "/api/v1/devices/pair",
+            json={
+                "schema_version": 1,
+                "request_id": "pair-web-self-001",
+                "pairing_code": issued["pairing_code"],
+            },
+        ).json()
+
+        missing = client.get("/api/v1/devices/me")
+        assert missing.status_code == 401
+        assert missing.json()["error"]["code"] == "UnauthorizedDevice"
+
+        game_forbidden = client.get(
+            "/api/v1/devices/me",
+            headers={"Authorization": f"Bearer {game['device_token']}"},
+        )
+        assert game_forbidden.status_code == 403
+        assert game_forbidden.json()["error"]["code"] == "UnauthorizedDevice"
+
+        game_revoke_forbidden = client.delete(
+            "/api/v1/devices/me",
+            headers={"Authorization": f"Bearer {game['device_token']}"},
+        )
+        assert game_revoke_forbidden.status_code == 403
+        assert game_revoke_forbidden.json()["error"]["code"] == "UnauthorizedDevice"
+
+        self_response = client.get(
+            "/api/v1/devices/me",
+            headers={
+                "Authorization": f"Bearer {paired['device_token']}",
+                "X-Request-ID": "device-me-001",
+            },
+        )
+        assert self_response.status_code == 200
+        assert self_response.headers["X-Request-ID"] == "device-me-001"
+        assert self_response.json() == {
+            "schema_version": 1,
+            "request_id": "device-me-001",
+            "profile_id": paired["profile_id"],
+            "device_id": paired["device"]["device_id"],
+            "role": "WebClient",
+            "status": "Active",
+        }
+
+        revoked = client.delete(
+            "/api/v1/devices/me",
+            headers={
+                "Authorization": f"Bearer {paired['device_token']}",
+                "X-Request-ID": "revoke-me-001",
+            },
+        )
+        assert revoked.status_code == 200
+        assert revoked.headers["X-Request-ID"] == "revoke-me-001"
+        assert revoked.json() == {
+            "schema_version": 1,
+            "request_id": "revoke-me-001",
+            "device_id": paired["device"]["device_id"],
+            "status": "Revoked",
+        }
+
+        rejected = client.get(
+            "/api/v1/devices/me",
+            headers={"Authorization": f"Bearer {paired['device_token']}"},
+        )
+        assert rejected.status_code == 401
+        assert rejected.json()["error"]["code"] == "UnauthorizedDevice"
+
+    with TestClient(create_app(settings)) as restarted_client:
+        restart_rejected = restarted_client.get(
+            "/api/v1/devices/me",
+            headers={"Authorization": f"Bearer {paired['device_token']}"},
+        )
+        assert restart_rejected.status_code == 401
+        assert restart_rejected.json()["error"]["code"] == "UnauthorizedDevice"
+
+
 def test_other_profile_device_cannot_be_revoked_and_secrets_are_not_logged(
     tmp_path: Path,
 ) -> None:

@@ -264,6 +264,8 @@ GET /api/v1/system/capabilities
 POST   /api/v1/devices/register-game
 POST   /api/v1/devices/pairing-codes
 POST   /api/v1/devices/pair
+GET    /api/v1/devices/me
+DELETE /api/v1/devices/me
 GET    /api/v1/devices
 DELETE /api/v1/devices/{device_id}
 ```
@@ -326,6 +328,8 @@ A Game 최초 연결
 - WebApp은 Pairing 성공 응답의 WebClient Device Token을 브라우저 자격 증명 저장소에 보관합니다.
 - 이후 접속과 Backend 재시작 시 저장된 Token으로 자동 연결하며 Code를 다시 요구하지 않습니다.
 - Device 폐기, Token 거부 또는 브라우저 데이터 삭제 시에만 새 QR Pairing을 요구합니다.
+- WebClient는 `/devices/me`로 자기 인증 상태만 확인하고 자기 Device만 폐기합니다.
+- 다른 Device 목록과 경로 기반 폐기는 계속 GameClient 권한으로 제한합니다.
 - 같은 LAN이라는 이유만으로 승인 없이 기기를 자동 등록하지 않습니다.
 
 ## 10. 데이터 모델

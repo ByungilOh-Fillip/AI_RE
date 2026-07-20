@@ -12,8 +12,7 @@ npm.cmd run dev
 
 Vite listens on the LAN and proxies `/health` and `/api` to the local Backend during development.
 
-For the M01 development-auth Chat slice, copy `.env.example` to the untracked
-`.env` file and set `VITE_DEV_WEB_DEVICE_TOKEN` to the same local-only value as
-Backend `DEV_WEB_DEVICE_TOKEN`. Vite variables are bundled into the development
-client, so this mechanism must not be used for production credentials; M02
-pairing replaces it with a device token issued at runtime.
+Open a `#/pair/{8-digit-code}` link or enter the Pairing Code in the WebApp.
+The resulting WebClient credential is stored under
+`aire.web_device_credentials.v1` and validated through `/api/v1/devices/me` on
+later visits. Device Tokens must never be added to Vite environment variables.

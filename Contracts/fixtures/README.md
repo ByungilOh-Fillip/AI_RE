@@ -14,5 +14,7 @@
 | `errors/duplicate-request.valid.json` | Valid conflicting idempotency key error |
 | `ai-service/request.valid.json` | Valid provider-independent AIService input without authentication data |
 | `ai-service/result.valid.json` | Valid normalized AIService output |
+| `devices/me.valid.json` | Valid active WebClient self identity without credentials |
+| `devices/revoke-me.valid.json` | Valid WebClient self-revocation result |
 
 Semantic checks such as command expiry, duplicate IDs, target validity, and source existence are application validations in addition to JSON Schema validation.

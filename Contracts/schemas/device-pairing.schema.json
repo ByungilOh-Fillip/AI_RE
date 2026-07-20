@@ -75,6 +75,19 @@
         "devices": { "type": "array", "items": { "$ref": "#/$defs/device" } }
       }
     },
+    "deviceSelfResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "request_id", "profile_id", "device_id", "role", "status"],
+      "properties": {
+        "schema_version": { "type": "integer", "const": 1 },
+        "request_id": { "$ref": "#/$defs/requestId" },
+        "profile_id": { "$ref": "#/$defs/requestId" },
+        "device_id": { "$ref": "#/$defs/requestId" },
+        "role": { "type": "string", "const": "WebClient" },
+        "status": { "type": "string", "const": "Active" }
+      }
+    },
     "deviceRevocationResponse": {
       "type": "object",
       "additionalProperties": false,

@@ -106,6 +106,45 @@ paths:
         "400": { $ref: "#/components/responses/ContractError" }
         "409": { $ref: "#/components/responses/ContractError" }
         "410": { $ref: "#/components/responses/ContractError" }
+  /api/v1/devices/me:
+    get:
+      operationId: getCurrentDevice
+      tags: [Devices]
+      security:
+        - DeviceBearer: []
+      parameters:
+        - $ref: "#/components/parameters/RequestIdHeader"
+      responses:
+        "200":
+          description: Active identity for the authenticated WebClient.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/device-pairing.schema.json#/$defs/deviceSelfResponse"
+        "401": { $ref: "#/components/responses/ContractError" }
+        "403": { $ref: "#/components/responses/ContractError" }
+    delete:
+      operationId: revokeCurrentDevice
+      tags: [Devices]
+      security:
+        - DeviceBearer: []
+      parameters:
+        - $ref: "#/components/parameters/RequestIdHeader"
+      responses:
+        "200":
+          description: Revocation result for the authenticated WebClient itself.
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "./schemas/device-pairing.schema.json#/$defs/deviceRevocationResponse"
+        "401": { $ref: "#/components/responses/ContractError" }
+        "403": { $ref: "#/components/responses/ContractError" }
   /api/v1/devices:
     get:
       operationId: listDevices
