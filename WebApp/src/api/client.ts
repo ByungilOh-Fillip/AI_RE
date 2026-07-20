@@ -1,10 +1,3 @@
-export interface HealthResponse {
-  service: "aire-backend";
-  status: "ok";
-  schema_version: number;
-  ai_mode: "mock" | "local";
-}
-
 export interface OfflineChatRequest {
   schema_version: 1;
   request_id: string;
@@ -37,6 +30,36 @@ export interface ChatResponse {
   };
 }
 
+export interface DeviceTokenResponse {
+  schema_version: 1;
+  request_id: string;
+  profile_id: string;
+  device: {
+    device_id: string;
+    role: "WebClient";
+    created_at: string;
+    last_used_at?: string | null;
+    revoked_at?: string | null;
+  };
+  device_token: string;
+}
+
+export interface DeviceSelfResponse {
+  schema_version: 1;
+  request_id: string;
+  profile_id: string;
+  device_id: string;
+  role: "WebClient";
+  status: "Active";
+}
+
+export interface DeviceRevocationResponse {
+  schema_version: 1;
+  request_id: string;
+  device_id: string;
+  status: "Revoked";
+}
+
 interface ErrorEnvelope {
   schema_version: 1;
   request_id: string;
@@ -47,7 +70,7 @@ interface ErrorEnvelope {
   };
 }
 
-export class ChatApiError extends Error {
+export class ApiClientError extends Error {
   constructor(
     public readonly code: string,
     public readonly retryable: boolean,
@@ -60,17 +83,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function isHealthResponse(value: unknown): value is HealthResponse {
-  if (!isRecord(value)) {
-    return false;
-  }
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0;
+}
 
-  return (
-    value.service === "aire-backend" &&
-    value.status === "ok" &&
-    typeof value.schema_version === "number" &&
-    (value.ai_mode === "mock" || value.ai_mode === "local")
-  );
+function isOptionalNullableString(value: unknown): boolean {
+  return value === undefined || typeof value === "string" || value === null;
 }
 
 function isChatResponse(value: unknown): value is ChatResponse {
@@ -91,6 +109,48 @@ function isChatResponse(value: unknown): value is ChatResponse {
   );
 }
 
+function isDeviceTokenResponse(value: unknown): value is DeviceTokenResponse {
+  if (!isRecord(value) || !isRecord(value.device)) {
+    return false;
+  }
+  return (
+    value.schema_version === 1 &&
+    isNonEmptyString(value.request_id) &&
+    isNonEmptyString(value.profile_id) &&
+    isNonEmptyString(value.device.device_id) &&
+    value.device.role === "WebClient" &&
+    typeof value.device.created_at === "string" &&
+    isOptionalNullableString(value.device.last_used_at) &&
+    isOptionalNullableString(value.device.revoked_at) &&
+    typeof value.device_token === "string" &&
+    value.device_token.length >= 32
+  );
+}
+
+function isDeviceSelfResponse(value: unknown): value is DeviceSelfResponse {
+  return (
+    isRecord(value) &&
+    value.schema_version === 1 &&
+    isNonEmptyString(value.request_id) &&
+    isNonEmptyString(value.profile_id) &&
+    isNonEmptyString(value.device_id) &&
+    value.role === "WebClient" &&
+    value.status === "Active"
+  );
+}
+
+function isDeviceRevocationResponse(
+  value: unknown,
+): value is DeviceRevocationResponse {
+  return (
+    isRecord(value) &&
+    value.schema_version === 1 &&
+    isNonEmptyString(value.request_id) &&
+    isNonEmptyString(value.device_id) &&
+    value.status === "Revoked"
+  );
+}
+
 function isErrorEnvelope(value: unknown): value is ErrorEnvelope {
   return (
     isRecord(value) &&
@@ -103,20 +163,99 @@ function isErrorEnvelope(value: unknown): value is ErrorEnvelope {
   );
 }
 
-export async function fetchHealth(apiBaseUrl: string): Promise<HealthResponse> {
-  const response = await fetch(`${apiBaseUrl}/health`, {
-    headers: { Accept: "application/json" },
-  });
+async function readJson(response: Response): Promise<unknown> {
+  try {
+    return await response.json();
+  } catch {
+    throw new ApiClientError("InvalidJsonResponse", false);
+  }
+}
 
+function requireSuccessfulRequest(
+  response: Response,
+  body: unknown,
+  requestId: string,
+): void {
   if (!response.ok) {
-    throw new Error(`Backend health request failed: ${response.status}`);
+    if (
+      isErrorEnvelope(body) &&
+      body.request_id === requestId &&
+      response.headers.get("X-Request-ID") === requestId
+    ) {
+      throw new ApiClientError(body.error.code, body.error.retryable);
+    }
+    throw new ApiClientError("InvalidErrorResponse", false);
   }
 
-  const body: unknown = await response.json();
-  if (!isHealthResponse(body)) {
-    throw new Error("Backend health response does not match the contract.");
+  if (response.headers.get("X-Request-ID") !== requestId) {
+    throw new ApiClientError("InvalidRequestIdResponse", false);
   }
+}
 
+export async function pairWebDevice(
+  apiBaseUrl: string,
+  pairingCode: string,
+  requestId: string,
+): Promise<DeviceTokenResponse> {
+  const response = await fetch(`${apiBaseUrl}/api/v1/devices/pair`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "X-Request-ID": requestId,
+    },
+    body: JSON.stringify({
+      schema_version: 1,
+      request_id: requestId,
+      pairing_code: pairingCode,
+    }),
+  });
+  const body = await readJson(response);
+  requireSuccessfulRequest(response, body, requestId);
+  if (!isDeviceTokenResponse(body) || body.request_id !== requestId) {
+    throw new ApiClientError("InvalidPairingResponse", false);
+  }
+  return body;
+}
+
+export async function getCurrentDevice(
+  apiBaseUrl: string,
+  deviceToken: string,
+  requestId: string,
+): Promise<DeviceSelfResponse> {
+  const response = await fetch(`${apiBaseUrl}/api/v1/devices/me`, {
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${deviceToken}`,
+      "X-Request-ID": requestId,
+    },
+  });
+  const body = await readJson(response);
+  requireSuccessfulRequest(response, body, requestId);
+  if (!isDeviceSelfResponse(body) || body.request_id !== requestId) {
+    throw new ApiClientError("InvalidDeviceResponse", false);
+  }
+  return body;
+}
+
+export async function revokeCurrentDevice(
+  apiBaseUrl: string,
+  deviceToken: string,
+  requestId: string,
+): Promise<DeviceRevocationResponse> {
+  const response = await fetch(`${apiBaseUrl}/api/v1/devices/me`, {
+    method: "DELETE",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${deviceToken}`,
+      "X-Request-ID": requestId,
+    },
+  });
+  const body = await readJson(response);
+  requireSuccessfulRequest(response, body, requestId);
+  if (!isDeviceRevocationResponse(body) || body.request_id !== requestId) {
+    throw new ApiClientError("InvalidRevocationResponse", false);
+  }
   return body;
 }
 
@@ -135,15 +274,10 @@ export async function createOfflineChat(
     },
     body: JSON.stringify(request),
   });
-  const body: unknown = await response.json();
-  if (!response.ok) {
-    if (isErrorEnvelope(body)) {
-      throw new ChatApiError(body.error.code, body.error.retryable);
-    }
-    throw new ChatApiError("InvalidErrorResponse", false);
-  }
+  const body = await readJson(response);
+  requireSuccessfulRequest(response, body, request.request_id);
   if (!isChatResponse(body) || body.request_id !== request.request_id) {
-    throw new ChatApiError("InvalidChatResponse", false);
+    throw new ApiClientError("InvalidChatResponse", false);
   }
   return body;
 }

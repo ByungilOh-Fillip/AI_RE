@@ -18,6 +18,7 @@ from app.application.models.pairing import (
     CreatePairingCodeRequest,
     DeviceListResponse,
     DeviceRevocationResponse,
+    DeviceSelfResponse,
     DeviceTokenResponse,
     PairDeviceRequest,
     PairingCodeResponse,
@@ -113,6 +114,30 @@ async def list_devices(
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> DeviceListResponse:
     return await _service(session, protector, settings).list_devices(
+        get_request_id(), identity
+    )
+
+
+@router.get("/me", response_model=DeviceSelfResponse)
+async def get_current_device(
+    identity: Annotated[AuthenticatedDevice, Depends(get_authenticated_device)],
+    session: DatabaseSession,
+    protector: Annotated[CredentialProtector, Depends(get_credential_protector)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> DeviceSelfResponse:
+    return await _service(session, protector, settings).get_current_device(
+        get_request_id(), identity
+    )
+
+
+@router.delete("/me", response_model=DeviceRevocationResponse)
+async def revoke_current_device(
+    identity: Annotated[AuthenticatedDevice, Depends(get_authenticated_device)],
+    session: DatabaseSession,
+    protector: Annotated[CredentialProtector, Depends(get_credential_protector)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> DeviceRevocationResponse:
+    return await _service(session, protector, settings).revoke_current_device(
         get_request_id(), identity
     )
 

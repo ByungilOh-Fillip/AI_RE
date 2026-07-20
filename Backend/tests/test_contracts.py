@@ -81,6 +81,7 @@ def test_openapi_document_and_external_refs_exist() -> None:
     assert "/api/v1/devices/register-game" in document["paths"]
     assert "/api/v1/devices/pairing-codes" in document["paths"]
     assert "/api/v1/devices/pair" in document["paths"]
+    assert "/api/v1/devices/me" in document["paths"]
 
     def collect_external_refs(value: Any) -> list[str]:
         if isinstance(value, dict):
@@ -103,3 +104,24 @@ def test_openapi_document_and_external_refs_exist() -> None:
     for reference in collect_external_refs(document):
         relative_path = reference.split("#", maxsplit=1)[0]
         assert (CONTRACTS_ROOT / relative_path).is_file()
+
+
+@pytest.mark.parametrize(
+    ("fixture_name", "definition_name"),
+    [
+        ("me.valid.json", "deviceSelfResponse"),
+        ("revoke-me.valid.json", "deviceRevocationResponse"),
+    ],
+)
+def test_device_response_fixture_matches_schema(
+    fixture_name: str,
+    definition_name: str,
+) -> None:
+    schema = load_json(SCHEMAS_ROOT / "device-pairing.schema.json")
+    validator = Draft202012Validator(
+        {"$ref": f"{schema['$id']}#/$defs/{definition_name}"},
+        registry=build_registry(),
+        format_checker=FormatChecker(),
+    )
+
+    validator.validate(load_json(FIXTURES_ROOT / "devices" / fixture_name))

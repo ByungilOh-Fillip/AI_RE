@@ -53,6 +53,15 @@ class DeviceListResponse(StrictModel):
     devices: list[DeviceView]
 
 
+class DeviceSelfResponse(StrictModel):
+    schema_version: Literal[1] = 1
+    request_id: StableId
+    profile_id: StableId
+    device_id: StableId
+    role: Literal["WebClient"] = "WebClient"
+    status: Literal["Active"] = "Active"
+
+
 class DeviceRevocationResponse(StrictModel):
     schema_version: Literal[1] = 1
     request_id: StableId

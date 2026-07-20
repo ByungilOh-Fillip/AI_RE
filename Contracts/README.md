@@ -21,6 +21,7 @@ This directory is the executable source of truth for data exchanged between the 
 
 - There is no multi-user `user_id`. C owns one local `profile_id` and scopes data by `save_slot_id` and `companion_id`.
 - C resolves `profile_id`, `device_id`, and the Device role from the bearer token.
+- A WebClient may inspect and revoke only its authenticated identity through `/api/v1/devices/me`; it cannot supply another Device ID.
 - Client-provided `profile_id` and `device_id` are optional claims. When present, C compares them with the authenticated identity and rejects a mismatch.
 - The local GameClient development token is accepted only by `register-game` as a bootstrap credential.
 - Registered GameClient and paired WebClient tokens are validated from persisted HMAC-SHA256 hashes. Raw tokens and Pairing Codes are never stored.
