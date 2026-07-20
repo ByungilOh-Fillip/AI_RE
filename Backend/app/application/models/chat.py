@@ -1,14 +1,16 @@
 from typing import Annotated, Literal, Self
 
-from pydantic import Field, model_validator
+from pydantic import Field, JsonValue, model_validator
 
 from app.application.models.ai import (
     AIMetadata,
     CommandCandidate,
+    CommandType,
     InteractionMode,
     MemoryCandidate,
     StrictModel,
     TimeContext,
+    validate_ai_context_values,
 )
 
 StableId = Annotated[
@@ -37,6 +39,8 @@ class ChatRequest(StrictModel):
         default_factory=list,
         max_length=32,
     )
+    game_context: dict[str, JsonValue] = Field(default_factory=dict)
+    allowed_commands: list[CommandType] = Field(default_factory=list, max_length=16)
 
     @model_validator(mode="after")
     def validate_time_source(self) -> Self:
@@ -50,6 +54,16 @@ class ChatRequest(StrictModel):
             and self.time_context.source != "RealWorld"
         ):
             raise ValueError("Offline requests require RealWorld time.")
+        if len(self.game_context) > 32:
+            raise ValueError("Game context must contain at most 32 properties.")
+        validate_ai_context_values(self.game_context)
+        if len(self.allowed_commands) != len(set(self.allowed_commands)):
+            raise ValueError("Allowed commands must be unique.")
+        if self.interaction_mode is InteractionMode.OFFLINE:
+            if self.game_context:
+                raise ValueError("Offline requests cannot provide game context.")
+            if self.allowed_commands:
+                raise ValueError("Offline requests cannot allow game commands.")
         return self
 
 

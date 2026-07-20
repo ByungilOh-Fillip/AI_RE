@@ -2,6 +2,9 @@
 
 FastAPI modular-monolith foundation for the C PC. The same application runs locally in `AI_MODE=mock` during development and later runs on the C PC with an AIService adapter selected by configuration.
 
+AI developers who are new to this repository should start with
+[`AI Developer Quickstart`](../Docs/Backend/AI_DEVELOPER_QUICKSTART.md).
+
 ## Local mock run
 
 ```powershell
@@ -35,6 +38,17 @@ data-migration task if pgvector or higher write concurrency becomes required.
 
 `POST /api/v1/chat` requires a registered GameClient or paired WebClient bearer token.
 Offline requests use the WebClient token and RealWorld `observed_at` plus an IANA
-timezone. Set `MOCK_AI_SCENARIO` to `normal`, `timeout`, `unavailable`, or
-`invalid_output` to reproduce normalized AI paths. Request bodies and
-Authorization values are intentionally omitted from structured logs.
+timezone. Set `MOCK_AI_SCENARIO` to `normal`, `command`, `memory`, `timeout`,
+`unavailable`, or `invalid_output` to reproduce normalized AI paths. Request
+bodies and Authorization values are intentionally omitted from structured logs.
+
+## Local AIService adapter
+
+`AI_MODE=local` requires `AI_RUNTIME_BASE_URL`, `AI_MODEL_NAME`, and
+`AI_PROMPT_VERSION`. The baseline adapter posts a provider-independent envelope
+to `POST {AI_RUNTIME_BASE_URL}/v1/generate-chat` and validates the response as a
+strict `AIServiceResult`. Runtime-specific request or response mapping stays in
+`app/infrastructure/ai`; Router, application ports, and database code do not
+depend on a provider SDK.
+
+`AI_MODE=mock` does not require any Runtime or model setting.

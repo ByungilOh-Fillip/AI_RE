@@ -9,6 +9,8 @@
 ### Backend / AI
 
 - [AI Backend Architecture](Backend/AI_BACKEND_ARCHITECTURE.md) — A/B/C 디바이스 구조, FastAPI 기반 Backend와 AIService 협업 계약
+- [AIService Handoff Guide](Backend/AI_SERVICE_HANDOFF.md) — AI 파트 입력·출력 계약, 책임 경계와 Local Runtime Adapter 인계 Gate
+- [AI Developer Quickstart](Backend/AI_DEVELOPER_QUICKSTART.md) — 처음 참여한 AI 개발자의 독립 검증, Adapter 교체와 Runtime·모델 계획 가이드
 
 ### Development / Test
 
