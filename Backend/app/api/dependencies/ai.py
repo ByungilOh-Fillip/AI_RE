@@ -2,17 +2,13 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from app.application.errors import AIServiceUnavailableError
-from app.application.models.ai import AIServiceRequest, AIServiceResult
 from app.application.ports.ai_service import AIService
+from app.infrastructure.ai.local_runtime import (
+    HttpLocalRuntimeTransport,
+    LocalRuntimeAIService,
+)
 from app.infrastructure.ai.mock import MockAIService
 from app.settings import Settings, get_settings
-
-
-class UnavailableLocalAIService:
-    async def generate_chat(self, request: AIServiceRequest) -> AIServiceResult:
-        del request
-        raise AIServiceUnavailableError
 
 
 def get_ai_service(
@@ -20,4 +16,16 @@ def get_ai_service(
 ) -> AIService:
     if settings.ai_mode == "mock":
         return MockAIService(settings.mock_ai_scenario)
-    return UnavailableLocalAIService()
+
+    assert settings.ai_runtime_base_url is not None
+    assert settings.ai_model_name is not None
+    assert settings.ai_prompt_version is not None
+    transport = HttpLocalRuntimeTransport(
+        base_url=settings.ai_runtime_base_url,
+        timeout_seconds=settings.ai_request_timeout_seconds,
+    )
+    return LocalRuntimeAIService(
+        model_name=settings.ai_model_name,
+        prompt_version=settings.ai_prompt_version,
+        transport=transport,
+    )

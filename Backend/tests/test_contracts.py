@@ -42,6 +42,10 @@ def build_registry() -> Registry:
         ("errors/duplicate-request.valid.json", "error-envelope.schema.json"),
         ("ai-service/request.valid.json", "ai-service-request.schema.json"),
         ("ai-service/result.valid.json", "ai-service-result.schema.json"),
+        ("ai-service/request.command.valid.json", "ai-service-request.schema.json"),
+        ("ai-service/result.command.valid.json", "ai-service-result.schema.json"),
+        ("ai-service/request.memory.valid.json", "ai-service-request.schema.json"),
+        ("ai-service/result.memory.valid.json", "ai-service-result.schema.json"),
         ("devices/register-game.valid.json", "register-game-request.schema.json"),
         ("devices/pair.valid.json", "pair-device-request.schema.json"),
     ],
@@ -69,6 +73,39 @@ def test_missing_time_context_fixture_is_rejected() -> None:
                 FIXTURES_ROOT / "chat/request.invalid-missing-time-context.json"
             )
         )
+
+
+def test_ai_service_fixtures_exclude_sensitive_identity_and_credentials() -> None:
+    forbidden_keys = {
+        "authorization",
+        "connectionstring",
+        "databaseconnectionstring",
+        "databaseurl",
+        "deviceid",
+        "pairingcode",
+        "password",
+        "profileid",
+        "secret",
+        "token",
+    }
+
+    def assert_safe(value: Any) -> None:
+        if isinstance(value, dict):
+            for key, nested_value in value.items():
+                normalized_key = "".join(
+                    character
+                    for character in key.casefold()
+                    if character.isalnum()
+                )
+                assert normalized_key not in forbidden_keys
+                assert not normalized_key.endswith(("password", "secret", "token"))
+                assert_safe(nested_value)
+        elif isinstance(value, list):
+            for nested_value in value:
+                assert_safe(nested_value)
+
+    for fixture_path in (FIXTURES_ROOT / "ai-service").glob("*.json"):
+        assert_safe(load_json(fixture_path))
 
 
 def test_openapi_document_and_external_refs_exist() -> None:

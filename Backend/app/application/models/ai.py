@@ -3,11 +3,54 @@ from enum import StrEnum
 from typing import Annotated, Literal, Self
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    JsonValue,
+    field_validator,
+    model_validator,
+)
 
 
 class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
+
+FORBIDDEN_AI_CONTEXT_KEYS = frozenset(
+    {
+        "authorization",
+        "connectionstring",
+        "databaseconnectionstring",
+        "databaseurl",
+        "dbpassword",
+        "deviceid",
+        "pairingcode",
+        "password",
+        "profileid",
+        "secret",
+        "token",
+    }
+)
+
+
+def validate_ai_context_values(value: JsonValue) -> None:
+    if isinstance(value, dict):
+        for key, nested_value in value.items():
+            normalized_key = "".join(
+                character
+                for character in key.casefold()
+                if character.isalnum()
+            )
+            if (
+                normalized_key in FORBIDDEN_AI_CONTEXT_KEYS
+                or normalized_key.endswith(("password", "secret", "token"))
+            ):
+                raise ValueError("Game context contains a forbidden sensitive key.")
+            validate_ai_context_values(nested_value)
+    elif isinstance(value, list):
+        for nested_value in value:
+            validate_ai_context_values(nested_value)
 
 
 class InteractionMode(StrEnum):
@@ -62,8 +105,10 @@ class RetrievedMemory(StrictModel):
 
 
 class AIServiceRequest(StrictModel):
-    schema_version: Literal[1] = 1
+    schema_version: Literal[2] = 2
     request_id: str = Field(min_length=1, max_length=128)
+    current_message_id: str = Field(min_length=1, max_length=128)
+    allowed_event_ids: list[str] = Field(default_factory=list, max_length=32)
     interaction_mode: InteractionMode
     companion_id: str = Field(min_length=1, max_length=128)
     user_message: str = Field(min_length=1, max_length=2000)
@@ -74,6 +119,24 @@ class AIServiceRequest(StrictModel):
         max_length=12,
     )
     allowed_commands: list[CommandType] = Field(default_factory=list, max_length=16)
+
+    @field_validator("allowed_event_ids", "allowed_commands")
+    @classmethod
+    def validate_unique_values(cls, values: list[object]) -> list[object]:
+        if len(values) != len(set(values)):
+            raise ValueError("AIService allowlists must contain unique values.")
+        return values
+
+    @field_validator("game_context")
+    @classmethod
+    def validate_game_context(
+        cls,
+        value: dict[str, JsonValue],
+    ) -> dict[str, JsonValue]:
+        if len(value) > 32:
+            raise ValueError("Game context must contain at most 32 properties.")
+        validate_ai_context_values(value)
+        return value
 
     @model_validator(mode="after")
     def validate_time_source(self) -> Self:
@@ -106,6 +169,8 @@ class CommandCandidate(StrictModel):
     def validate_expiration(self) -> Self:
         if self.expires_at <= self.issued_at:
             raise ValueError("Command expiration must be later than issue time.")
+        if len(self.parameters) > 16:
+            raise ValueError("Command parameters must contain at most 16 properties.")
         return self
 
 
@@ -122,6 +187,13 @@ class MemoryCandidate(StrictModel):
     source_mode: InteractionMode
     occurred_at: datetime
     confidence: float = Field(ge=0, le=1)
+
+    @field_validator("source_ids")
+    @classmethod
+    def validate_unique_source_ids(cls, values: list[str]) -> list[str]:
+        if len(values) != len(set(values)):
+            raise ValueError("Memory source IDs must be unique.")
+        return values
 
 
 class AIMetadata(StrictModel):

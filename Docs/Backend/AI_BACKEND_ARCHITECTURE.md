@@ -180,6 +180,9 @@ M01의 최소 경계는 `generate_chat` 하나로 고정합니다. 실제 모델
 
 ### AIServiceRequest
 
+- `schema_version=2`
+- 현재 사용자 `message_id`
+- Backend가 존재와 범위를 검증한 허용 Event ID 목록
 - `interaction_mode`: `InGame` 또는 `Offline`
 - 정제된 사용자 발화
 - 현재 모드에 맞는 Time Context
@@ -187,6 +190,10 @@ M01의 최소 경계는 `generate_chat` 하나로 고정합니다. 실제 모델
 - Backend가 검색한 관련 기억
 - 허용된 Command 목록
 - 동료의 관계 의미 상태
+
+Memory Candidate의 `source_ids`는 현재 Message ID와 허용 Event ID의 합집합만
+사용합니다. 현재 Event 저장 구현 전에는 Client의 `recent_event_ids`를 검증할 수
+없으므로 허용 Event ID 목록은 비워 둡니다.
 
 다음 값은 AI 입력에서 제외합니다.
 

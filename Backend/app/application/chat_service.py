@@ -10,7 +10,7 @@ from app.application.errors import (
     DeviceRoleNotAllowedError,
     IdentityScopeMismatchError,
 )
-from app.application.models.ai import AIServiceRequest, InteractionMode
+from app.application.models.ai import AIServiceRequest, AIServiceResult, InteractionMode
 from app.application.models.chat import ChatRequest, ChatResponse
 from app.application.ports.ai_service import AIService
 from app.application.ports.chat_repository import ChatRepository
@@ -46,10 +46,15 @@ class ChatService:
 
         ai_request = AIServiceRequest(
             request_id=request.request_id,
+            current_message_id=request.message_id,
+            allowed_event_ids=[],
             interaction_mode=request.interaction_mode,
             companion_id=request.companion_id,
             user_message=request.user_message,
             time_context=request.time_context,
+            game_context=request.game_context,
+            retrieved_memories=[],
+            allowed_commands=request.allowed_commands,
         )
         try:
             async with asyncio.timeout(self._ai_timeout_seconds):
@@ -57,8 +62,7 @@ class ChatService:
         except TimeoutError as error:
             raise AIServiceTimeoutError from error
 
-        if result.request_id != request.request_id:
-            raise AIServiceInvalidOutputError
+        self._validate_ai_result(ai_request, result)
 
         response = ChatResponse(
             request_id=request.request_id,
@@ -108,3 +112,30 @@ class ChatService:
             separators=(",", ":"),
         )
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def _validate_ai_result(
+        request: AIServiceRequest,
+        result: AIServiceResult,
+    ) -> None:
+        if result.request_id != request.request_id:
+            raise AIServiceInvalidOutputError
+
+        allowed_commands = set(request.allowed_commands)
+        for candidate in result.command_candidates:
+            if (
+                candidate.request_id != request.request_id
+                or candidate.type not in allowed_commands
+            ):
+                raise AIServiceInvalidOutputError
+
+        allowed_source_ids = {
+            request.current_message_id,
+            *request.allowed_event_ids,
+        }
+        for candidate in result.memory_candidates:
+            if (
+                candidate.source_mode is not request.interaction_mode
+                or not set(candidate.source_ids).issubset(allowed_source_ids)
+            ):
+                raise AIServiceInvalidOutputError

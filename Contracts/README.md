@@ -15,6 +15,8 @@ This directory is the executable source of truth for data exchanged between the 
 - Display names, Unreal class names, and array indexes are not stable protocol identifiers.
 - `InGame` uses `GameWorld` time and `Offline` uses `RealWorld` time.
 - Command and Memory candidates are untrusted until validated by the owning system.
+- AIService Request v2 exposes only the current Message ID and Backend-verified
+  Event IDs as valid Memory Candidate sources.
 - Fixtures must not contain credentials or real user conversation data.
 
 ## Identity and development authentication

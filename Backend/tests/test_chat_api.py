@@ -7,8 +7,18 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import SecretStr
 from sqlalchemy import func, select
 
+from app.api.dependencies.ai import get_ai_service
+from app.application.models.ai import (
+    AIMetadata,
+    AIServiceRequest,
+    AIServiceResult,
+    CommandCandidate,
+    CommandType,
+    MemoryCandidate,
+)
 from app.infrastructure.database.base import Base
 from app.infrastructure.database.connection import Database
 from app.infrastructure.database.models import (
@@ -21,7 +31,6 @@ from app.infrastructure.logging import JsonFormatter
 from app.infrastructure.security.credentials import CredentialProtector
 from app.main import create_app
 from app.settings import Settings
-from pydantic import SecretStr
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 OFFLINE_FIXTURE = (
@@ -348,6 +357,129 @@ def test_chat_rejects_mismatched_time_context(tmp_path: Path) -> None:
                 "Authorization": f"Bearer {WEB_TOKEN}",
                 "X-Request-ID": str(request_body["request_id"]),
             },
+            json=request_body,
+        )
+
+    assert response.status_code == 400
+    assert response.json()["error"]["code"] == "InvalidRequest"
+
+
+def test_chat_builds_policy_limited_ai_service_request(tmp_path: Path) -> None:
+    class CapturingAIService:
+        request: AIServiceRequest | None = None
+
+        async def generate_chat(self, request: AIServiceRequest) -> AIServiceResult:
+            self.request = request
+            return AIServiceResult(
+                request_id=request.request_id,
+                display_text="정책 제한 입력 확인",
+                metadata=AIMetadata(
+                    provider="test",
+                    model_version="test-v1",
+                    prompt_version="test-v1",
+                ),
+            )
+
+    database_url = f"sqlite+aiosqlite:///{(tmp_path / 'ai-input.db').as_posix()}"
+    asyncio.run(create_schema(database_url))
+    app = create_app(make_settings(database_url))
+    ai_service = CapturingAIService()
+    app.dependency_overrides[get_ai_service] = lambda: ai_service
+    request_body = json.loads(INGAME_FIXTURE.read_text(encoding="utf-8"))
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/chat",
+            headers={"Authorization": f"Bearer {GAME_TOKEN}"},
+            json=request_body,
+        )
+
+    assert response.status_code == 200
+    assert ai_service.request is not None
+    assert ai_service.request.current_message_id == request_body["message_id"]
+    assert ai_service.request.allowed_event_ids == []
+    assert ai_service.request.game_context == request_body["game_context"]
+    assert ai_service.request.allowed_commands == [
+        CommandType.HOLD_POSITION,
+        CommandType.RETURN_TO_PLAYER,
+    ]
+    assert ai_service.request.retrieved_memories == []
+
+
+@pytest.mark.parametrize("invalid_candidate", ["command", "memory"])
+def test_chat_rejects_candidates_outside_backend_allowlists(
+    tmp_path: Path,
+    invalid_candidate: str,
+) -> None:
+    class InvalidCandidateAIService:
+        async def generate_chat(self, request: AIServiceRequest) -> AIServiceResult:
+            now = datetime.now(timezone.utc)
+            command_candidates = []
+            memory_candidates = []
+            if invalid_candidate == "command":
+                command_candidates = [
+                    CommandCandidate(
+                        command_id="command-not-allowed",
+                        request_id=request.request_id,
+                        type=CommandType.FOLLOW,
+                        issued_at=now,
+                        expires_at=now.replace(year=now.year + 1),
+                    )
+                ]
+            else:
+                memory_candidates = [
+                    MemoryCandidate(
+                        candidate_id="memory-invented-source",
+                        type="UserSharedEvent",
+                        summary="근거 없는 후보",
+                        source_ids=["invented-source-id"],
+                        source_mode=request.interaction_mode,
+                        occurred_at=now,
+                        confidence=1.0,
+                    )
+                ]
+            return AIServiceResult(
+                request_id=request.request_id,
+                display_text="거부되어야 하는 응답",
+                command_candidates=command_candidates,
+                memory_candidates=memory_candidates,
+                metadata=AIMetadata(
+                    provider="test",
+                    model_version="test-v1",
+                    prompt_version="test-v1",
+                ),
+            )
+
+    database_url = f"sqlite+aiosqlite:///{(tmp_path / f'invalid-{invalid_candidate}.db').as_posix()}"
+    asyncio.run(create_schema(database_url))
+    app = create_app(make_settings(database_url))
+    app.dependency_overrides[get_ai_service] = lambda: InvalidCandidateAIService()
+    request_body = json.loads(INGAME_FIXTURE.read_text(encoding="utf-8"))
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/chat",
+            headers={"Authorization": f"Bearer {GAME_TOKEN}"},
+            json=request_body,
+        )
+
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "AIServiceInvalidOutput"
+
+
+def test_chat_rejects_sensitive_values_in_nested_game_context(tmp_path: Path) -> None:
+    database_url = f"sqlite+aiosqlite:///{(tmp_path / 'sensitive-context.db').as_posix()}"
+    asyncio.run(create_schema(database_url))
+    app = create_app(make_settings(database_url))
+    request_body = json.loads(INGAME_FIXTURE.read_text(encoding="utf-8"))
+    request_body["game_context"] = {
+        "nearby_actor": {"device_id": "must-not-reach-ai"}
+    }
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/chat",
+            headers={"Authorization": f"Bearer {GAME_TOKEN}"},
             json=request_body,
         )
 
