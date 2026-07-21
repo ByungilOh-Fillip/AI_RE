@@ -34,7 +34,7 @@ public class AI_RE : ModuleRules
 			"AI_RE/OBI/UI/Public",
 			"AI_RE/Global/Components/Public",
 			"AI_RE/Global/Data",
-			"AI_RE/Work/LMK/Public"
+			"AI_RE/LMK/Public"
 			
 		});
 
