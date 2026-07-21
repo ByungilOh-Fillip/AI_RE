@@ -1,0 +1,70 @@
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Components/ActorComponent.h"
+#include "StatusComponent.generated.h"
+
+// UI 업데이트를 위한 다이내믹 델리게이트 선언
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStatChangedSignature, float, CurrentValue, float, MaxValue);
+
+UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+class AI_RE_API UStatusComponent : public UActorComponent
+{
+	GENERATED_BODY()
+
+public:	
+	UStatusComponent();
+
+protected:
+	virtual void BeginPlay() override;
+
+public:	
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+    // ----------------------------------------------------
+    // Stats
+    // ----------------------------------------------------
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Status|HP")
+	float MaxHP;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status|HP")
+	float CurrentHP;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Status|SP")
+	float MaxSP;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status|SP")
+	float CurrentSP;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Status|Hunger")
+	float MaxHunger;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status|Hunger")
+	float CurrentHunger;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Status|Combat")
+	float Attack;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Status|Combat")
+	float Defense;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Status|Work")
+	float WorkSpeed;
+
+    // ----------------------------------------------------
+    // Delegates (UI 연동용)
+    // ----------------------------------------------------
+	UPROPERTY(BlueprintAssignable, Category = "Status|Events")
+	FOnStatChangedSignature OnHPChanged;
+
+	UPROPERTY(BlueprintAssignable, Category = "Status|Events")
+	FOnStatChangedSignature OnSPChanged;
+
+	UPROPERTY(BlueprintAssignable, Category = "Status|Events")
+	FOnStatChangedSignature OnHungerChanged;
+
+    // ----------------------------------------------------
+    // Functions
+    // ----------------------------------------------------
+    UFUNCTION(BlueprintCallable, Category = "Status|Functions")
+    void ConsumeSP(float Amount);
+
+    UFUNCTION(BlueprintCallable, Category = "Status|Functions")
+    void ApplyDamage(float Amount);
+};
