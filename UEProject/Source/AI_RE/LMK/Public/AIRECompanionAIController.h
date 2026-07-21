@@ -5,6 +5,7 @@
 #include "AIRECompanionAIController.generated.h"
 
 class AAIRECompanionCharacter;
+class UStateTreeAIComponent;
 
 UCLASS(Blueprintable)
 class AI_RE_API AAIRECompanionAIController : public AAIController
@@ -21,6 +22,9 @@ protected:
 
 private:
 	void ResetCompanionState();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AIRE|Companion|AI", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UStateTreeAIComponent> StateTreeAIComponent;
 
 	TWeakObjectPtr<AAIRECompanionCharacter> CompanionCharacter;
 };

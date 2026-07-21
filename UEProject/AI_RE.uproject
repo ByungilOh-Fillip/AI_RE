@@ -50,6 +50,10 @@
 		{
 			"Name": "WebSocketNetworking",
 			"Enabled": true
+		},
+		{
+			"Name": "StateTreeToolset",
+			"Enabled": true
 		}
 	],
 	"TargetPlatforms": [
