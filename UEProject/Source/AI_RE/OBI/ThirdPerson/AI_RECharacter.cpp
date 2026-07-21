@@ -13,8 +13,8 @@
 #include "AI_RE.h"
 #include "PlayerCombatComponent.h"
 #include "PlayerInventoryComponent.h"
-#include "StatusComponent.h"
-#include "SkillComponent.h"
+#include "AI_REStatusComponent.h"
+#include "AI_RESkillComponent.h"
 #include "Engine/Engine.h"
 
 AAI_RECharacter::AAI_RECharacter()
@@ -53,8 +53,8 @@ AAI_RECharacter::AAI_RECharacter()
 
 	// Component Define
 	
-	StatusComponent = CreateDefaultSubobject<UStatusComponent>(TEXT("StatusComponent"));
-	SkillComponent = CreateDefaultSubobject<USkillComponent>(TEXT("SkillComponent"));
+	StatusComponent = CreateDefaultSubobject<UAI_REStatusComponent>(TEXT("StatusComponent"));
+	SkillComponent = CreateDefaultSubobject<UAI_RESkillComponent>(TEXT("SkillComponent"));
 	InventoryComponent = CreateDefaultSubobject<UPlayerInventoryComponent>(TEXT("InventoryComponent"));
 	CombatComponent = CreateDefaultSubobject<UPlayerCombatComponent>(TEXT("CombatComponent"));
 	

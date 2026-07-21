@@ -2,18 +2,18 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "StatusComponent.generated.h"
+#include "AI_REStatusComponent.generated.h"
 
 // UI 업데이트를 위한 다이내믹 델리게이트 선언
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStatChangedSignature, float, CurrentValue, float, MaxValue);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class AI_RE_API UStatusComponent : public UActorComponent
+class AI_RE_API UAI_REStatusComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:	
-	UStatusComponent();
+	UAI_REStatusComponent();
 
 protected:
 	virtual void BeginPlay() override;

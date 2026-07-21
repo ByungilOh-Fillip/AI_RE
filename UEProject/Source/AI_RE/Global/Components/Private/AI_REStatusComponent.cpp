@@ -1,6 +1,6 @@
-#include "StatusComponent.h"
+#include "AI_REStatusComponent.h"
 
-UStatusComponent::UStatusComponent()
+UAI_REStatusComponent::UAI_REStatusComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 
@@ -19,7 +19,7 @@ UStatusComponent::UStatusComponent()
 	WorkSpeed = 1.0f;
 }
 
-void UStatusComponent::BeginPlay()
+void UAI_REStatusComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -29,18 +29,18 @@ void UStatusComponent::BeginPlay()
 	OnHungerChanged.Broadcast(CurrentHunger, MaxHunger);
 }
 
-void UStatusComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UAI_REStatusComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
-void UStatusComponent::ConsumeSP(float Amount)
+void UAI_REStatusComponent::ConsumeSP(float Amount)
 {
     CurrentSP = FMath::Clamp(CurrentSP - Amount, 0.f, MaxSP);
     OnSPChanged.Broadcast(CurrentSP, MaxSP);
 }
 
-void UStatusComponent::ApplyDamage(float Amount)
+void UAI_REStatusComponent::ApplyDamage(float Amount)
 {
     float ActualDamage = FMath::Max(Amount - Defense, 1.f);
     CurrentHP = FMath::Clamp(CurrentHP - ActualDamage, 0.f, MaxHP);

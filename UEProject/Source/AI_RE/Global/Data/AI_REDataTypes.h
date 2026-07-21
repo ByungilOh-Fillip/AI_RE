@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "Templates/SubclassOf.h"
-#include "MixUpDataTypes.generated.h"
+#include "AI_REDataTypes.generated.h"
 
 USTRUCT(BlueprintType)
 struct AI_RE_API FMixUpSkillData

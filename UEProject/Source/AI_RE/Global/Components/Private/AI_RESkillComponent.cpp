@@ -1,23 +1,23 @@
-#include "SkillComponent.h"
+#include "AI_RESkillComponent.h"
 
 #include "Engine/World.h"
 
-USkillComponent::USkillComponent()
+UAI_RESkillComponent::UAI_RESkillComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
-void USkillComponent::BeginPlay()
+void UAI_RESkillComponent::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
-void USkillComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UAI_RESkillComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
-void USkillComponent::MarkSkillAsUsed(int32 SkillSlot)
+void UAI_RESkillComponent::MarkSkillAsUsed(int32 SkillSlot)
 {
     float CurrentTime = GetWorld()->GetTimeSeconds();
 

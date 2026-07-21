@@ -9,8 +9,8 @@
 
 class UPlayerCombatComponent;
 class UPlayerInventoryComponent;
-class UStatusComponent;
-class USkillComponent;
+class UAI_REStatusComponent;
+class UAI_RESkillComponent;
 class USpringArmComponent;
 class UCameraComponent;
 class UInputAction;
@@ -101,7 +101,7 @@ public:
 	
 private:
 	
-	float bIsSprint;
+	bool bIsSprint;
 	
 	UFUNCTION(BlueprintCallable, Category="Input")
 	void StartSprint();
@@ -118,23 +118,23 @@ protected:
 	
 	// 상태 컴포넌트 (체력, 스태미나, 배고픔 등 통합)
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player Components")
-	TObjectPtr<UStatusComponent> StatusComponent;
+	TObjectPtr<UAI_REStatusComponent> StatusComponent;
 	
 	// 스킬 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player Components")
-	TObjectPtr<USkillComponent> SkillComponent;
+	TObjectPtr<UAI_RESkillComponent> SkillComponent;
 	// 인벤토리 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player Components")
 	TObjectPtr<UPlayerInventoryComponent> InventoryComponent;
 	// 전투/액션 컴포넌트
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player Components") 
 	TObjectPtr<UPlayerCombatComponent> CombatComponent;
 
 public:
 	
 	// FOCEINLINE -> Function Call 방식이 아니라 사용 위치에서 코드를 받아 붙여넣어(inline) 실행
-	FORCEINLINE TObjectPtr<UStatusComponent> GetStatusComponent() const { return StatusComponent; }
-	FORCEINLINE TObjectPtr<USkillComponent> GetSkillComponent() const { return SkillComponent; }
+	FORCEINLINE TObjectPtr<UAI_REStatusComponent> GetStatusComponent() const { return StatusComponent; }
+	FORCEINLINE TObjectPtr<UAI_RESkillComponent> GetSkillComponent() const { return SkillComponent; }
 	FORCEINLINE TObjectPtr<UPlayerInventoryComponent> GetInventoryComponent() const { return InventoryComponent; }
 	FORCEINLINE TObjectPtr<UPlayerCombatComponent> GetCombatComponent() const { return CombatComponent; }
 	

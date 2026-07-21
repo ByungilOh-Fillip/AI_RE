@@ -2,16 +2,16 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "MixUpDataTypes.h"
-#include "SkillComponent.generated.h"
+#include "AI_REDataTypes.h"
+#include "AI_RESkillComponent.generated.h"
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class AI_RE_API USkillComponent : public UActorComponent
+class AI_RE_API UAI_RESkillComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:	
-	USkillComponent();
+	UAI_RESkillComponent();
 
 protected:
 	virtual void BeginPlay() override;
