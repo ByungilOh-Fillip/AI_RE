@@ -1,6 +1,7 @@
 #include "AIRECompanionAIController.h"
 
 #include "AIRECompanionCharacter.h"
+#include "Components/StateTreeAIComponent.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogAIRECompanionAIController, Log, All);
 
@@ -9,6 +10,10 @@ AAIRECompanionAIController::AAIRECompanionAIController()
 	PrimaryActorTick.bCanEverTick = false;
 	bAttachToPawn = true;
 	bStartAILogicOnPossess = false;
+
+	StateTreeAIComponent = CreateDefaultSubobject<UStateTreeAIComponent>(TEXT("StateTreeAI"));
+	check(StateTreeAIComponent);
+	StateTreeAIComponent->SetStartLogicAutomatically(false);
 }
 
 void AAIRECompanionAIController::OnPossess(APawn* InPawn)
@@ -25,6 +30,16 @@ void AAIRECompanionAIController::OnPossess(APawn* InPawn)
 
 	CompanionCharacter = PossessedCompanion;
 	StopMovement();
+	StateTreeAIComponent->StartLogic();
+
+	if (!StateTreeAIComponent->IsRunning())
+	{
+		UE_LOG(
+			LogAIRECompanionAIController,
+			Warning,
+			TEXT("Companion AIController %s could not start its StateTree. Verify the StateTree asset assignment."),
+			*GetNameSafe(this));
+	}
 }
 
 void AAIRECompanionAIController::OnUnPossess()
@@ -41,6 +56,11 @@ void AAIRECompanionAIController::EndPlay(const EEndPlayReason::Type EndPlayReaso
 
 void AAIRECompanionAIController::ResetCompanionState()
 {
+	if (IsValid(StateTreeAIComponent))
+	{
+		StateTreeAIComponent->StopLogic(TEXT("Companion controller is releasing its pawn."));
+	}
+
 	StopMovement();
 	CompanionCharacter.Reset();
 }
