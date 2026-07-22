@@ -43,8 +43,6 @@ protected:
 	
 public:
 	UFUNCTION(BlueprintCallable)
-	void InitializeHUD(TObjectPtr<UAI_REStatusComponent> InStatus);
-	
-	
+	void InitializeHUD(UAI_REStatusComponent* InStatus);
 	
 };

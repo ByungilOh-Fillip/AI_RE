@@ -11,10 +11,12 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "AI_RE.h"
+#include "AI_REMainUI.h"
 #include "PlayerCombatComponent.h"
 #include "PlayerInventoryComponent.h"
 #include "AI_REStatusComponent.h"
 #include "AI_RESkillComponent.h"
+#include "Blueprint/UserWidget.h"
 #include "Engine/Engine.h"
 
 AAI_RECharacter::AAI_RECharacter()
@@ -165,6 +167,25 @@ void AAI_RECharacter::StopSprint()
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("On Stop Sprint"));
 	GetCharacterMovement() -> MaxWalkSpeed = 500.f;
 	bIsSprint = false;
+}
+
+void AAI_RECharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	// 1. 에디터에서 MainUIClass(위젯 디자인)를 제대로 넣어줬는지 확인
+	if (MainUIClass != nullptr)
+	{
+		// 2. 위젯 생성 (CreateWidget)
+		MainUIInstance = CreateWidget<UAI_REMainUI>(GetWorld(), MainUIClass);
+		if (MainUIInstance)
+		{
+			// 3. 화면에 띄우기 (AddToViewport)
+			MainUIInstance->AddToViewport();
+			// 4. C++로 만든 InitializeHUD 호출해서 내 StatusComponent 연결해주기!
+			MainUIInstance->InitializeHUD(StatusComponent);
+		}
+	}
 }
 
 

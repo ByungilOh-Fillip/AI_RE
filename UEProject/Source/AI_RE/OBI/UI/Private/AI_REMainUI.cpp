@@ -7,7 +7,7 @@
 #include "AI_REStatusComponent.h"
 
 
-void UAI_REMainUI::InitializeHUD(TObjectPtr<UAI_REStatusComponent> InStatus)
+void UAI_REMainUI::InitializeHUD(UAI_REStatusComponent* InStatus)
 {
 	if (InStatus == nullptr) return; 
 	
@@ -43,3 +43,4 @@ void UAI_REMainUI::UpdateHungerBar(float Current, float Max)
 		HungerBar->SetTargetPercent(Current/Max);
 	}
 }
+

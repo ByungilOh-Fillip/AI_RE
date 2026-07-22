@@ -9,7 +9,6 @@
 /**
  * 
  */
-
 class UImage;
 
 UCLASS()
@@ -23,12 +22,16 @@ private:
 	
 	FTimerHandle SmoothTimerHandle;
 	
-	UFUNCTION();
 	void SmoothBar();
 	
 protected:
-	UPROPERTY(meta = (BindWidget))
+	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UImage> StateBar;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bar Settings")
+	TObjectPtr<class UMaterialInterface> CustomBarMaterial;
+	
+	virtual void NativePreConstruct() override;
 	
 public:
 	void SetTargetPercent(float NewPercent);

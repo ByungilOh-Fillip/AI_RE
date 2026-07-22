@@ -7,6 +7,7 @@
 #include "Logging/LogMacros.h"
 #include "AI_RECharacter.generated.h"
 
+class UAI_REMainUI;
 class UPlayerCombatComponent;
 class UPlayerInventoryComponent;
 class UAI_REStatusComponent;
@@ -110,6 +111,13 @@ private:
 	void StopSprint();
 	
 protected:
+	// UI
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<UAI_REMainUI> MainUIClass;
+	// 실제로 생성되어서 화면에 떠 있는 위젯을 조종하기 위한 리모콘
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
+	TObjectPtr<UAI_REMainUI> MainUIInstance;
+	
 	
 	// 스프린트 (달리기) IA
 	UPROPERTY(EditAnywhere, Category="Input")
@@ -131,6 +139,8 @@ protected:
 	TObjectPtr<UPlayerCombatComponent> CombatComponent;
 
 public:
+	
+	virtual void BeginPlay() override;
 	
 	// FOCEINLINE -> Function Call 방식이 아니라 사용 위치에서 코드를 받아 붙여넣어(inline) 실행
 	FORCEINLINE TObjectPtr<UAI_REStatusComponent> GetStatusComponent() const { return StatusComponent; }
