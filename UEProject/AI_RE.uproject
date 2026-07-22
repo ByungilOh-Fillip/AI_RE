@@ -54,6 +54,10 @@
 		{
 			"Name": "StateTreeToolset",
 			"Enabled": true
+		},
+		{
+			"Name": "AIREStateTreeMCPToolset",
+			"Enabled": true
 		}
 	],
 	"TargetPlatforms": [

@@ -16,6 +16,37 @@ AAIRECompanionAIController::AAIRECompanionAIController()
 	StateTreeAIComponent->SetStartLogicAutomatically(false);
 }
 
+void AAIRECompanionAIController::SetTestBehaviorRequest(
+	const EAIRECompanionTestBehaviorRequest Request,
+	const bool bIsRequested)
+{
+	if (Request == EAIRECompanionTestBehaviorRequest::None)
+	{
+		return;
+	}
+
+	if (bIsRequested)
+	{
+		EnumAddFlags(ActiveTestBehaviorRequests, Request);
+	}
+	else
+	{
+		EnumRemoveFlags(ActiveTestBehaviorRequests, Request);
+	}
+}
+
+bool AAIRECompanionAIController::IsTestBehaviorRequestActive(
+	const EAIRECompanionTestBehaviorRequest Request) const
+{
+	return Request != EAIRECompanionTestBehaviorRequest::None
+		&& EnumHasAnyFlags(ActiveTestBehaviorRequests, Request);
+}
+
+void AAIRECompanionAIController::ClearTestBehaviorRequests()
+{
+	ActiveTestBehaviorRequests = EAIRECompanionTestBehaviorRequest::None;
+}
+
 void AAIRECompanionAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
@@ -28,6 +59,7 @@ void AAIRECompanionAIController::OnPossess(APawn* InPawn)
 		return;
 	}
 
+	ClearTestBehaviorRequests();
 	CompanionCharacter = PossessedCompanion;
 	StopMovement();
 	StateTreeAIComponent->StartLogic();
@@ -62,5 +94,6 @@ void AAIRECompanionAIController::ResetCompanionState()
 	}
 
 	StopMovement();
+	ClearTestBehaviorRequests();
 	CompanionCharacter.Reset();
 }
