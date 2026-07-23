@@ -40,6 +40,9 @@ struct FAIRECompanionContextEvaluatorInstanceData
 	UPROPERTY(VisibleAnywhere, Category = "Output")
 	TObjectPtr<APawn> PlayerPawn;
 
+	UPROPERTY(VisibleAnywhere, Category = "Output")
+	TObjectPtr<AActor> ThreatTarget;
+
 	UPROPERTY(VisibleAnywhere, Category = "Output", meta = (Units = "cm"))
 	float DistanceToPlayer = 0.0f;
 
@@ -87,6 +90,9 @@ struct FAIRECompanionContextEvaluatorInstanceData
 
 	UPROPERTY(Transient)
 	TWeakObjectPtr<APawn> PreviousPlayerPawn;
+
+	UPROPERTY(Transient)
+	TWeakObjectPtr<AActor> PreviousThreatTarget;
 };
 
 USTRUCT(meta = (DisplayName = "AIRE Companion Context", Category = "AIRE|Companion"))

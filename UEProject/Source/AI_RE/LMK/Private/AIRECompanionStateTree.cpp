@@ -3,6 +3,7 @@
 #include "AIRECompanionAIController.h"
 #include "AIRECompanionCharacter.h"
 #include "AIRECompanionConfigDataAsset.h"
+#include "AIRECompanionThreatComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -54,6 +55,7 @@ void FAIRECompanionContextEvaluator::TreeStop(FStateTreeExecutionContext& Contex
 {
 	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
 	InstanceData.PlayerPawn = nullptr;
+	InstanceData.ThreatTarget = nullptr;
 	InstanceData.DistanceToPlayer = 0.0f;
 	InstanceData.MovementSpeed = 0.0f;
 	InstanceData.FollowStopDistance = 0.0f;
@@ -70,6 +72,7 @@ void FAIRECompanionContextEvaluator::TreeStop(FStateTreeExecutionContext& Contex
 	InstanceData.PreviousBehaviorInputMask = 0;
 	InstanceData.bHasPreviousBehaviorInput = false;
 	InstanceData.PreviousPlayerPawn.Reset();
+	InstanceData.PreviousThreatTarget.Reset();
 }
 
 void FAIRECompanionContextEvaluator::Tick(FStateTreeExecutionContext& Context, const float) const
@@ -81,6 +84,7 @@ void FAIRECompanionContextEvaluator::UpdateContext(FStateTreeExecutionContext& C
 {
 	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
 	InstanceData.PlayerPawn = nullptr;
+	InstanceData.ThreatTarget = nullptr;
 	InstanceData.DistanceToPlayer = 0.0f;
 	InstanceData.MovementSpeed = 0.0f;
 	InstanceData.FollowStopDistance = 0.0f;
@@ -100,12 +104,17 @@ void FAIRECompanionContextEvaluator::UpdateContext(FStateTreeExecutionContext& C
 			EAIRECompanionTestBehaviorRequest::Disabled);
 		InstanceData.bIsSurvivalRequested = InstanceData.CompanionController->IsTestBehaviorRequestActive(
 			EAIRECompanionTestBehaviorRequest::Survival);
-		InstanceData.bIsCombatRequested = InstanceData.CompanionController->IsTestBehaviorRequestActive(
-			EAIRECompanionTestBehaviorRequest::Combat);
 		InstanceData.bIsDirectCommandRequested = InstanceData.CompanionController->IsTestBehaviorRequestActive(
 			EAIRECompanionTestBehaviorRequest::DirectCommand);
 		InstanceData.bIsWorkRequested = InstanceData.CompanionController->IsTestBehaviorRequestActive(
 			EAIRECompanionTestBehaviorRequest::Work);
+
+		const UAIRECompanionThreatComponent* ThreatComponent = InstanceData.CompanionController->GetThreatComponent();
+		if (IsValid(ThreatComponent))
+		{
+			InstanceData.ThreatTarget = ThreatComponent->GetSelectedThreatTarget();
+			InstanceData.bIsCombatRequested = ThreatComponent->IsCombatRequested();
+		}
 	}
 
 	if (IsValid(InstanceData.CompanionCharacter))
@@ -144,12 +153,15 @@ void FAIRECompanionContextEvaluator::UpdateContext(FStateTreeExecutionContext& C
 
 	const uint16 CurrentBehaviorInputMask = static_cast<uint16>(BehaviorInputMask);
 	const bool bPlayerPawnChanged = InstanceData.PreviousPlayerPawn.Get() != InstanceData.PlayerPawn.Get();
+	const bool bThreatTargetChanged = InstanceData.PreviousThreatTarget.Get() != InstanceData.ThreatTarget.Get();
 	InstanceData.bBehaviorSelectionChanged = !InstanceData.bHasPreviousBehaviorInput
 		|| InstanceData.PreviousBehaviorInputMask != CurrentBehaviorInputMask
-		|| bPlayerPawnChanged;
+		|| bPlayerPawnChanged
+		|| bThreatTargetChanged;
 	InstanceData.PreviousBehaviorInputMask = CurrentBehaviorInputMask;
 	InstanceData.bHasPreviousBehaviorInput = true;
 	InstanceData.PreviousPlayerPawn = InstanceData.PlayerPawn;
+	InstanceData.PreviousThreatTarget = InstanceData.ThreatTarget;
 }
 
 FAIREApplyCompanionMovementSettingsTask::FAIREApplyCompanionMovementSettingsTask()

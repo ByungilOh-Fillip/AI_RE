@@ -23,7 +23,6 @@ namespace
 {
 	const FString AllowedLevelPath = TEXT("/Game/Work/OBI/ThirdPerson/Lvl_ThirdPerson.Lvl_ThirdPerson");
 	const FString FixtureMarker = TEXT("[AIRE_TEST_FIXTURE:M03-E02-T02]");
-	constexpr int32 ExpectedFixtureNodeCount = 17;
 
 	struct FAIREBehaviorKeyBinding
 	{
@@ -35,10 +34,10 @@ namespace
 	{
 		{EKeys::One, TEXT("Work")},
 		{EKeys::Two, TEXT("DirectCommand")},
-		{EKeys::Three, TEXT("Combat")},
 		{EKeys::Four, TEXT("Survival")},
 		{EKeys::Five, TEXT("Disabled")}
 	};
+	constexpr int32 ExpectedFixtureNodeCount = UE_ARRAY_COUNT(BehaviorKeyBindings) * 3 + 2;
 
 	FAIRECompanionTestFixtureResult MakeFailure(const FString& Message)
 	{
@@ -251,8 +250,9 @@ FAIRECompanionTestFixtureResult UAIRECompanionTestMCPToolset::ConfigureBehaviorT
 		}
 	}
 
-	UK2Node_InputKey* ClearInputNode = CreateInputKeyNode(*EventGraph, EKeys::Zero, 5 * 260);
-	UK2Node_CallFunction* ClearCall = CreateCallNode(*EventGraph, *ClearRequestsFunction, 360, 5 * 260);
+	const int32 ClearNodeY = UE_ARRAY_COUNT(BehaviorKeyBindings) * 260;
+	UK2Node_InputKey* ClearInputNode = CreateInputKeyNode(*EventGraph, EKeys::Zero, ClearNodeY);
+	UK2Node_CallFunction* ClearCall = CreateCallNode(*EventGraph, *ClearRequestsFunction, 360, ClearNodeY);
 	if (!Schema->TryCreateConnection(ClearInputNode->GetPressedPin(), ClearCall->GetExecPin()))
 	{
 		RemoveFixtureNodes(*Blueprint, *EventGraph);
