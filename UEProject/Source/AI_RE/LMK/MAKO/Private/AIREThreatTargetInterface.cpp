@@ -11,7 +11,7 @@ bool IAIREThreatTargetInterface::IsHostileThreatFor_Implementation(const AActor*
 
 bool IAIREThreatTargetInterface::IsAliveThreatTarget_Implementation() const
 {
-	const AActor* TargetActor = Cast<AActor>(_getUObject());
+	const AActor* TargetActor = Cast<AActor>(this);
 	if (!IsValid(TargetActor))
 	{
 		return false;

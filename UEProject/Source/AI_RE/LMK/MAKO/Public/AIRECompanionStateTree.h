@@ -9,6 +9,8 @@ class AAIRECompanionCharacter;
 class AAIRECompanionAIController;
 class AActor;
 class APawn;
+class UAIRECompanionEquipmentComponent;
+class UAbilitySystemComponent;
 
 UENUM(BlueprintType)
 enum class EAIRECompanionBehaviorState : uint8
@@ -43,6 +45,12 @@ struct FAIRECompanionContextEvaluatorInstanceData
 	UPROPERTY(VisibleAnywhere, Category = "Output")
 	TObjectPtr<AActor> ThreatTarget;
 
+	UPROPERTY(VisibleAnywhere, Category = "Output")
+	TObjectPtr<UAIRECompanionEquipmentComponent> EquipmentComponent;
+
+	UPROPERTY(VisibleAnywhere, Category = "Output")
+	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
+
 	UPROPERTY(VisibleAnywhere, Category = "Output", meta = (Units = "cm"))
 	float DistanceToPlayer = 0.0f;
 
@@ -54,6 +62,12 @@ struct FAIRECompanionContextEvaluatorInstanceData
 
 	UPROPERTY(VisibleAnywhere, Category = "Output", meta = (Units = "cm"))
 	float ReturnStartDistance = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, Category = "Output", meta = (Units = "cm"))
+	float CombatDistance = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, Category = "Output", meta = (Units = "s"))
+	float CombatCooldown = 0.0f;
 
 	UPROPERTY(VisibleAnywhere, Category = "Output")
 	bool bHasPlayer = false;
@@ -207,4 +221,72 @@ struct FAIRECompanionBehaviorDebugTask : public FStateTreeTaskCommonBase
 	virtual void ExitState(
 		FStateTreeExecutionContext& Context,
 		const FStateTreeTransitionResult& Transition) const override;
+};
+
+USTRUCT()
+struct FAIRECompanionEngageThreatTaskInstanceData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = "Context")
+	TObjectPtr<AAIRECompanionAIController> CompanionController;
+
+	UPROPERTY(EditAnywhere, Category = "Context")
+	TObjectPtr<UAIRECompanionEquipmentComponent> EquipmentComponent;
+
+	UPROPERTY(EditAnywhere, Category = "Context")
+	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	TObjectPtr<AActor> ThreatTarget;
+
+	UPROPERTY(EditAnywhere, Category = "Input", meta = (Units = "cm"))
+	float CombatDistance = 0.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Input", meta = (Units = "s"))
+	float CombatCooldown = 0.0f;
+
+	UPROPERTY(Transient)
+	TWeakObjectPtr<AActor> ActiveTarget;
+
+	UPROPERTY(Transient)
+	float RetryTimeRemaining = 0.0f;
+
+	UPROPERTY(Transient)
+	bool bMoveRequested = false;
+};
+
+USTRUCT(meta = (DisplayName = "Engage Companion Threat", Category = "AIRE|Companion"))
+struct FAIRECompanionEngageThreatTask : public FStateTreeTaskCommonBase
+{
+	GENERATED_BODY()
+
+	using FInstanceDataType = FAIRECompanionEngageThreatTaskInstanceData;
+
+	FAIRECompanionEngageThreatTask();
+
+	virtual const UStruct* GetInstanceDataType() const override
+	{
+		return FInstanceDataType::StaticStruct();
+	}
+
+	virtual EStateTreeRunStatus EnterState(
+		FStateTreeExecutionContext& Context,
+		const FStateTreeTransitionResult& Transition) const override;
+
+	virtual EStateTreeRunStatus Tick(
+		FStateTreeExecutionContext& Context,
+		float DeltaTime) const override;
+
+	virtual void ExitState(
+		FStateTreeExecutionContext& Context,
+		const FStateTreeTransitionResult& Transition) const override;
+
+private:
+	static bool IsTargetUsable(const AActor* TargetActor);
+	static bool IsTargetInRange(
+		const APawn& CompanionPawn,
+		const AActor& TargetActor,
+		float CombatDistance);
+	static void CancelOwnedRequests(FInstanceDataType& InstanceData);
 };

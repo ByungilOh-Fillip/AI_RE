@@ -7,6 +7,7 @@
 
 class UAIRECompanionConfigDataAsset;
 class UAIRECompanionAttributeSet;
+class UAIRECompanionEquipmentComponent;
 class UAbilitySystemComponent;
 struct FOnAttributeChangeData;
 
@@ -25,6 +26,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "AIRE|Companion|Abilities")
 	bool IsAbilitySystemDisabled() const;
+
+	UFUNCTION(BlueprintPure, Category = "AIRE|Companion|Equipment")
+	UAIRECompanionEquipmentComponent* GetEquipmentComponent() const;
 
 	bool ResetAttributesToConfiguredDefaults();
 
@@ -47,6 +51,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AIRE|Companion|Abilities", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UAIRECompanionAttributeSet> CompanionAttributeSet;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AIRE|Companion|Equipment", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UAIRECompanionEquipmentComponent> EquipmentComponent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AIRE|Companion|Configuration", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UAIRECompanionConfigDataAsset> CompanionConfig;
