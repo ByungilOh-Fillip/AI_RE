@@ -37,9 +37,10 @@ namespace
 		{EKeys::Four, TEXT("Survival")},
 		{EKeys::Five, TEXT("Disabled")}
 	};
-	constexpr int32 ExpectedFixtureNodeCount = UE_ARRAY_COUNT(BehaviorKeyBindings) * 3 + 2;
+	constexpr int32 GasFixtureNodeCount = 8;
+	constexpr int32 ExpectedFixtureNodeCount = UE_ARRAY_COUNT(BehaviorKeyBindings) * 3 + 2 + GasFixtureNodeCount;
 
-	FAIRECompanionTestFixtureResult MakeFailure(const FString& Message)
+	FAIRECompanionTestFixtureResult MakeFixtureFailure(const FString& Message)
 	{
 		FAIRECompanionTestFixtureResult Result;
 		Result.Message = Message;
@@ -163,6 +164,23 @@ namespace
 		Schema.TrySetDefaultValue(*RequestedPin, bIsRequested ? TEXT("true") : TEXT("false"));
 		return true;
 	}
+
+	bool ConfigureDamageCall(
+		const UEdGraphSchema_K2& Schema,
+		UK2Node_CallFunction& CallNode,
+		const float DamageAmount,
+		FString& OutError)
+	{
+		UEdGraphPin* DamageAmountPin = CallNode.FindPin(TEXT("DamageAmount"));
+		if (DamageAmountPin == nullptr)
+		{
+			OutError = TEXT("The damage testing function has no DamageAmount pin.");
+			return false;
+		}
+
+		Schema.TrySetDefaultValue(*DamageAmountPin, FString::SanitizeFloat(DamageAmount));
+		return true;
+	}
 }
 
 FAIRECompanionTestFixtureResult UAIRECompanionTestMCPToolset::InspectBehaviorTestInputs(UWorld* LevelWorld)
@@ -172,14 +190,14 @@ FAIRECompanionTestFixtureResult UAIRECompanionTestMCPToolset::InspectBehaviorTes
 	FString Error;
 	if (!TryGetLevelBlueprint(LevelWorld, false, Blueprint, EventGraph, Error))
 	{
-		return MakeFailure(Error);
+		return MakeFixtureFailure(Error);
 	}
 
 	FAIRECompanionTestFixtureResult Result;
 	Result.NodeCount = CountFixtureNodes(*EventGraph);
 	Result.bSuccess = Result.NodeCount == ExpectedFixtureNodeCount;
 	Result.Message = Result.bSuccess
-		? TEXT("The complete M03-E02-T02 input fixture is present.")
+		? TEXT("The complete behavior and Companion GAS input fixture is present.")
 		: FString::Printf(TEXT("Expected %d fixture nodes but found %d."), ExpectedFixtureNodeCount, Result.NodeCount);
 	return Result;
 }
@@ -188,11 +206,11 @@ FAIRECompanionTestFixtureResult UAIRECompanionTestMCPToolset::ConfigureBehaviorT
 {
 	if (!IsValid(LevelWorld) || LevelWorld->GetPathName() != AllowedLevelPath)
 	{
-		return MakeFailure(FString::Printf(TEXT("Only %s may be edited by this test tool."), *AllowedLevelPath));
+		return MakeFixtureFailure(FString::Printf(TEXT("Only %s may be edited by this test tool."), *AllowedLevelPath));
 	}
 	if (LevelWorld->GetOutermost()->IsDirty())
 	{
-		return MakeFailure(TEXT("Save or discard existing level changes before configuring the test fixture."));
+		return MakeFixtureFailure(TEXT("Save or discard existing level changes before configuring the test fixture."));
 	}
 
 	ULevelScriptBlueprint* Blueprint = nullptr;
@@ -200,7 +218,7 @@ FAIRECompanionTestFixtureResult UAIRECompanionTestMCPToolset::ConfigureBehaviorT
 	FString Error;
 	if (!TryGetLevelBlueprint(LevelWorld, true, Blueprint, EventGraph, Error))
 	{
-		return MakeFailure(Error);
+		return MakeFixtureFailure(Error);
 	}
 	if (CountFixtureNodes(*EventGraph) == ExpectedFixtureNodeCount)
 	{
@@ -214,15 +232,23 @@ FAIRECompanionTestFixtureResult UAIRECompanionTestMCPToolset::ConfigureBehaviorT
 	UClass* TestingLibraryClass = FindObject<UClass>(nullptr, TEXT("/Script/AI_RE.AIRECompanionTestingBlueprintLibrary"));
 	if (!IsValid(TestingLibraryClass))
 	{
-		return MakeFailure(TEXT("AIRECompanionTestingBlueprintLibrary is not loaded."));
+		return MakeFixtureFailure(TEXT("AIRECompanionTestingBlueprintLibrary is not loaded."));
 	}
 
 	UFunction* SetRequestFunction = TestingLibraryClass->FindFunctionByName(TEXT("SetFirstCompanionTestBehaviorRequest"));
 	UFunction* ClearRequestsFunction = TestingLibraryClass->FindFunctionByName(TEXT("ClearFirstCompanionTestBehaviorRequests"));
+	UFunction* ApplyDamageFunction = TestingLibraryClass->FindFunctionByName(TEXT("ApplyDamageToFirstCompanion"));
+	UFunction* ResetAttributesFunction = TestingLibraryClass->FindFunctionByName(TEXT("ResetFirstCompanionAttributes"));
+	UFunction* LogAbilityStateFunction = TestingLibraryClass->FindFunctionByName(TEXT("LogFirstCompanionAbilityState"));
 	const UEdGraphSchema_K2* Schema = Cast<UEdGraphSchema_K2>(EventGraph->GetSchema());
-	if (!IsValid(SetRequestFunction) || !IsValid(ClearRequestsFunction) || !IsValid(Schema))
+	if (!IsValid(SetRequestFunction)
+		|| !IsValid(ClearRequestsFunction)
+		|| !IsValid(ApplyDamageFunction)
+		|| !IsValid(ResetAttributesFunction)
+		|| !IsValid(LogAbilityStateFunction)
+		|| !IsValid(Schema))
 	{
-		return MakeFailure(TEXT("Required testing functions or the K2 graph schema are unavailable."));
+		return MakeFixtureFailure(TEXT("Required testing functions or the K2 graph schema are unavailable."));
 	}
 
 	const FScopedTransaction Transaction(LOCTEXT("ConfigureBehaviorTestInputs", "Configure AIRE Companion Test Inputs"));
@@ -246,7 +272,7 @@ FAIRECompanionTestFixtureResult UAIRECompanionTestMCPToolset::ConfigureBehaviorT
 		{
 			RemoveFixtureNodes(*Blueprint, *EventGraph);
 			FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(Blueprint);
-			return MakeFailure(Error.IsEmpty() ? TEXT("Failed to connect a behavior test input node.") : Error);
+			return MakeFixtureFailure(Error.IsEmpty() ? TEXT("Failed to connect a behavior test input node.") : Error);
 		}
 	}
 
@@ -257,7 +283,49 @@ FAIRECompanionTestFixtureResult UAIRECompanionTestMCPToolset::ConfigureBehaviorT
 	{
 		RemoveFixtureNodes(*Blueprint, *EventGraph);
 		FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(Blueprint);
-		return MakeFailure(TEXT("Failed to connect the clear-request input node."));
+		return MakeFixtureFailure(TEXT("Failed to connect the clear-request input node."));
+	}
+
+	UK2Node_InputKey* LightDamageInputNode = CreateInputKeyNode(*EventGraph, EKeys::Six, 0);
+	LightDamageInputNode->NodePosX = 900;
+	UK2Node_CallFunction* LightDamageCall = CreateCallNode(*EventGraph, *ApplyDamageFunction, 1260, 0);
+	if (!ConfigureDamageCall(*Schema, *LightDamageCall, 25.0f, Error)
+		|| !Schema->TryCreateConnection(LightDamageInputNode->GetPressedPin(), LightDamageCall->GetExecPin()))
+	{
+		RemoveFixtureNodes(*Blueprint, *EventGraph);
+		FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(Blueprint);
+		return MakeFixtureFailure(Error.IsEmpty() ? TEXT("Failed to connect the light-damage input node.") : Error);
+	}
+
+	UK2Node_InputKey* FatalDamageInputNode = CreateInputKeyNode(*EventGraph, EKeys::Seven, 260);
+	FatalDamageInputNode->NodePosX = 900;
+	UK2Node_CallFunction* FatalDamageCall = CreateCallNode(*EventGraph, *ApplyDamageFunction, 1260, 260);
+	if (!ConfigureDamageCall(*Schema, *FatalDamageCall, 200.0f, Error)
+		|| !Schema->TryCreateConnection(FatalDamageInputNode->GetPressedPin(), FatalDamageCall->GetExecPin()))
+	{
+		RemoveFixtureNodes(*Blueprint, *EventGraph);
+		FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(Blueprint);
+		return MakeFixtureFailure(Error.IsEmpty() ? TEXT("Failed to connect the fatal-damage input node.") : Error);
+	}
+
+	UK2Node_InputKey* ResetAttributesInputNode = CreateInputKeyNode(*EventGraph, EKeys::Eight, 520);
+	ResetAttributesInputNode->NodePosX = 900;
+	UK2Node_CallFunction* ResetAttributesCall = CreateCallNode(*EventGraph, *ResetAttributesFunction, 1260, 520);
+	if (!Schema->TryCreateConnection(ResetAttributesInputNode->GetPressedPin(), ResetAttributesCall->GetExecPin()))
+	{
+		RemoveFixtureNodes(*Blueprint, *EventGraph);
+		FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(Blueprint);
+		return MakeFixtureFailure(TEXT("Failed to connect the reset-attributes input node."));
+	}
+
+	UK2Node_InputKey* LogAbilityStateInputNode = CreateInputKeyNode(*EventGraph, EKeys::Nine, 780);
+	LogAbilityStateInputNode->NodePosX = 900;
+	UK2Node_CallFunction* LogAbilityStateCall = CreateCallNode(*EventGraph, *LogAbilityStateFunction, 1260, 780);
+	if (!Schema->TryCreateConnection(LogAbilityStateInputNode->GetPressedPin(), LogAbilityStateCall->GetExecPin()))
+	{
+		RemoveFixtureNodes(*Blueprint, *EventGraph);
+		FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(Blueprint);
+		return MakeFixtureFailure(TEXT("Failed to connect the ability-state log input node."));
 	}
 
 	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(Blueprint);
@@ -266,7 +334,7 @@ FAIRECompanionTestFixtureResult UAIRECompanionTestMCPToolset::ConfigureBehaviorT
 	Result.NodeCount = CountFixtureNodes(*EventGraph);
 	Result.bSuccess = Result.NodeCount == ExpectedFixtureNodeCount;
 	Result.Message = Result.bSuccess
-		? TEXT("Behavior test inputs configured. Compile and save explicitly.")
+		? TEXT("Behavior and Companion GAS test inputs configured. Compile and save explicitly.")
 		: FString::Printf(TEXT("Fixture creation was incomplete: %d nodes were created."), Result.NodeCount);
 	return Result;
 }
@@ -278,7 +346,7 @@ FAIRECompanionTestFixtureResult UAIRECompanionTestMCPToolset::RemoveBehaviorTest
 	FString Error;
 	if (!TryGetLevelBlueprint(LevelWorld, false, Blueprint, EventGraph, Error))
 	{
-		return MakeFailure(Error);
+		return MakeFixtureFailure(Error);
 	}
 
 	const FScopedTransaction Transaction(LOCTEXT("RemoveBehaviorTestInputs", "Remove AIRE Companion Test Inputs"));
@@ -302,7 +370,7 @@ FAIRECompanionTestFixtureResult UAIRECompanionTestMCPToolset::ValidateAndCompile
 	FString Error;
 	if (!TryGetLevelBlueprint(LevelWorld, false, Blueprint, EventGraph, Error))
 	{
-		return MakeFailure(Error);
+		return MakeFixtureFailure(Error);
 	}
 
 	FCompilerResultsLog CompilerLog;
@@ -326,21 +394,21 @@ FAIRECompanionTestFixtureResult UAIRECompanionTestMCPToolset::SaveLevelBlueprint
 	FString Error;
 	if (!TryGetLevelBlueprint(LevelWorld, false, Blueprint, EventGraph, Error))
 	{
-		return MakeFailure(Error);
+		return MakeFixtureFailure(Error);
 	}
 	if (Blueprint->Status == BS_Dirty || Blueprint->Status == BS_Error)
 	{
-		return MakeFailure(TEXT("The Level Blueprint requires a successful compile before saving."));
+		return MakeFixtureFailure(TEXT("The Level Blueprint requires a successful compile before saving."));
 	}
 	if (GEditor == nullptr)
 	{
-		return MakeFailure(TEXT("Unreal Editor is unavailable."));
+		return MakeFixtureFailure(TEXT("Unreal Editor is unavailable."));
 	}
 
 	UEditorAssetSubsystem* AssetSubsystem = GEditor->GetEditorSubsystem<UEditorAssetSubsystem>();
 	if (!IsValid(AssetSubsystem) || !AssetSubsystem->SaveLoadedAsset(LevelWorld, true))
 	{
-		return MakeFailure(TEXT("The level package could not be saved."));
+		return MakeFixtureFailure(TEXT("The level package could not be saved."));
 	}
 
 	FAIRECompanionTestFixtureResult Result;

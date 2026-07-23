@@ -21,4 +21,9 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AIRE|Companion|Threat")
 	bool IsHostileThreatFor(const AActor* Observer) const;
 	virtual bool IsHostileThreatFor_Implementation(const AActor* Observer) const;
+
+	/** Returns whether this target can currently participate in threat selection. */
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "AIRE|Companion|Threat")
+	bool IsAliveThreatTarget() const;
+	virtual bool IsAliveThreatTarget_Implementation() const;
 };

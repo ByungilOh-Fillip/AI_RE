@@ -20,4 +20,13 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "AIRE|Companion|Testing", meta = (WorldContext = "WorldContextObject"))
 	static bool ClearFirstCompanionTestBehaviorRequests(const UObject* WorldContextObject);
+
+	UFUNCTION(BlueprintCallable, Category = "AIRE|Companion|Testing", meta = (WorldContext = "WorldContextObject"))
+	static bool ApplyDamageToFirstCompanion(const UObject* WorldContextObject, float DamageAmount);
+
+	UFUNCTION(BlueprintCallable, Category = "AIRE|Companion|Testing", meta = (WorldContext = "WorldContextObject"))
+	static bool ResetFirstCompanionAttributes(const UObject* WorldContextObject);
+
+	UFUNCTION(BlueprintCallable, Category = "AIRE|Companion|Testing", meta = (WorldContext = "WorldContextObject"))
+	static bool LogFirstCompanionAbilityState(const UObject* WorldContextObject);
 };
