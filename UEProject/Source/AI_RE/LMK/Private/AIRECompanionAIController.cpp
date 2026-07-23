@@ -1,6 +1,7 @@
 #include "AIRECompanionAIController.h"
 
 #include "AIRECompanionCharacter.h"
+#include "AIRECompanionThreatComponent.h"
 #include "Components/StateTreeAIComponent.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogAIRECompanionAIController, Log, All);
@@ -14,6 +15,10 @@ AAIRECompanionAIController::AAIRECompanionAIController()
 	StateTreeAIComponent = CreateDefaultSubobject<UStateTreeAIComponent>(TEXT("StateTreeAI"));
 	check(StateTreeAIComponent);
 	StateTreeAIComponent->SetStartLogicAutomatically(false);
+
+	ThreatComponent = CreateDefaultSubobject<UAIRECompanionThreatComponent>(TEXT("Threat"));
+	check(ThreatComponent);
+	SetPerceptionComponent(*ThreatComponent);
 }
 
 void AAIRECompanionAIController::SetTestBehaviorRequest(
@@ -47,6 +52,11 @@ void AAIRECompanionAIController::ClearTestBehaviorRequests()
 	ActiveTestBehaviorRequests = EAIRECompanionTestBehaviorRequest::None;
 }
 
+UAIRECompanionThreatComponent* AAIRECompanionAIController::GetThreatComponent() const
+{
+	return ThreatComponent;
+}
+
 void AAIRECompanionAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
@@ -61,6 +71,7 @@ void AAIRECompanionAIController::OnPossess(APawn* InPawn)
 
 	ClearTestBehaviorRequests();
 	CompanionCharacter = PossessedCompanion;
+	ThreatComponent->StartThreatDetection(PossessedCompanion);
 	StopMovement();
 	StateTreeAIComponent->StartLogic();
 
@@ -88,6 +99,11 @@ void AAIRECompanionAIController::EndPlay(const EEndPlayReason::Type EndPlayReaso
 
 void AAIRECompanionAIController::ResetCompanionState()
 {
+	if (IsValid(ThreatComponent))
+	{
+		ThreatComponent->StopThreatDetection();
+	}
+
 	if (IsValid(StateTreeAIComponent))
 	{
 		StateTreeAIComponent->StopLogic(TEXT("Companion controller is releasing its pawn."));

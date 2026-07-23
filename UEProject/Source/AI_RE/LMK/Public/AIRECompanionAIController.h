@@ -5,6 +5,7 @@
 #include "AIRECompanionAIController.generated.h"
 
 class AAIRECompanionCharacter;
+class UAIRECompanionThreatComponent;
 class UStateTreeAIComponent;
 
 UENUM(BlueprintType, meta = (Bitflags, UseEnumValuesAsMaskValuesInEditor = "true"))
@@ -13,7 +14,6 @@ enum class EAIRECompanionTestBehaviorRequest : uint8
 	None = 0 UMETA(Hidden),
 	Disabled = 0x01,
 	Survival = 0x02,
-	Combat = 0x04,
 	DirectCommand = 0x08,
 	Work = 0x10
 };
@@ -36,6 +36,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "AIRE|Companion|Testing")
 	void ClearTestBehaviorRequests();
 
+	UAIRECompanionThreatComponent* GetThreatComponent() const;
+
 protected:
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void OnUnPossess() override;
@@ -46,6 +48,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AIRE|Companion|AI", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UStateTreeAIComponent> StateTreeAIComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AIRE|Companion|Threat", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UAIRECompanionThreatComponent> ThreatComponent;
 
 	UPROPERTY(Transient)
 	EAIRECompanionTestBehaviorRequest ActiveTestBehaviorRequests = EAIRECompanionTestBehaviorRequest::None;
