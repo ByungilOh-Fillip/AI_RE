@@ -48,6 +48,30 @@ bool UAIRECompanionConfigDataAsset::IsConfigurationValid(FText& OutValidationErr
 		return false;
 	}
 
+	if (!FMath::IsFinite(MaxHealth) || MaxHealth <= 0.0f)
+	{
+		OutValidationError = NSLOCTEXT("AIRECompanionConfig", "InvalidMaxHealth", "Max Health must be finite and greater than zero.");
+		return false;
+	}
+
+	if (!FMath::IsFinite(InitialHealth) || InitialHealth < 0.0f || InitialHealth > MaxHealth)
+	{
+		OutValidationError = NSLOCTEXT("AIRECompanionConfig", "InvalidInitialHealth", "Initial Health must be finite and between zero and Max Health.");
+		return false;
+	}
+
+	if (!FMath::IsFinite(MaxStamina) || MaxStamina <= 0.0f)
+	{
+		OutValidationError = NSLOCTEXT("AIRECompanionConfig", "InvalidMaxStamina", "Max Stamina must be finite and greater than zero.");
+		return false;
+	}
+
+	if (!FMath::IsFinite(InitialStamina) || InitialStamina < 0.0f || InitialStamina > MaxStamina)
+	{
+		OutValidationError = NSLOCTEXT("AIRECompanionConfig", "InvalidInitialStamina", "Initial Stamina must be finite and between zero and Max Stamina.");
+		return false;
+	}
+
 	if (FollowStopDistance >= ReturnStartDistance)
 	{
 		OutValidationError = NSLOCTEXT("AIRECompanionConfig", "InvalidFollowReturnThresholds", "Follow Stop Distance must be less than Return Start Distance.");

@@ -76,7 +76,10 @@ AActor* UAIRECompanionThreatComponent::GetSelectedThreatTarget() const
 
 bool UAIRECompanionThreatComponent::IsCombatRequested() const
 {
-	return bIsThreatDetectionActive && SelectedThreatTarget.IsValid();
+	return bIsThreatDetectionActive
+		&& CompanionCharacter.IsValid()
+		&& !CompanionCharacter->IsAbilitySystemDisabled()
+		&& SelectedThreatTarget.IsValid();
 }
 
 void UAIRECompanionThreatComponent::BeginPlay()
@@ -144,6 +147,12 @@ void UAIRECompanionThreatComponent::RefreshThreatSelection()
 		return;
 	}
 
+	if (CompanionCharacter->IsAbilitySystemDisabled())
+	{
+		ClearSelectedTarget(EAIREThreatCleanupReason::CompanionDisabled);
+		return;
+	}
+
 	const UAIRECompanionConfigDataAsset* CompanionConfig = CompanionCharacter->GetCompanionConfig();
 	const UWorld* World = CompanionCharacter->GetWorld();
 	APawn* PlayerPawn = IsValid(World) ? UGameplayStatics::GetPlayerPawn(World, 0) : nullptr;
@@ -188,9 +197,10 @@ bool UAIRECompanionThreatComponent::IsActorHostile(AActor* Actor) const
 		return false;
 	}
 
-	return IAIREThreatTargetInterface::Execute_IsHostileThreatFor(
-		Actor,
-		CompanionCharacter.Get());
+	return IAIREThreatTargetInterface::Execute_IsAliveThreatTarget(Actor)
+		&& IAIREThreatTargetInterface::Execute_IsHostileThreatFor(
+			Actor,
+			CompanionCharacter.Get());
 }
 
 bool UAIRECompanionThreatComponent::IsActorEligible(
@@ -367,6 +377,8 @@ const TCHAR* UAIRECompanionThreatComponent::GetCleanupReasonName(const EAIREThre
 		return TEXT("OutsideDetectionDistance");
 	case EAIREThreatCleanupReason::OutsidePlayerChaseDistance:
 		return TEXT("OutsidePlayerChaseDistance");
+	case EAIREThreatCleanupReason::CompanionDisabled:
+		return TEXT("CompanionDisabled");
 	case EAIREThreatCleanupReason::DetectionStopped:
 		return TEXT("DetectionStopped");
 	case EAIREThreatCleanupReason::None:

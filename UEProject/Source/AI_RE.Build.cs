@@ -15,6 +15,9 @@ public class AI_RE : ModuleRules
 			"InputCore",
 			"EnhancedInput",
 			"AIModule",
+			"GameplayAbilities",
+			"GameplayTags",
+			"GameplayTasks",
 			"StateTreeModule",
 			"GameplayStateTreeModule",
 			"UMG",
@@ -34,8 +37,9 @@ public class AI_RE : ModuleRules
 			"AI_RE/OBI/UI/Public",
 			"AI_RE/Global/Components/Public",
 			"AI_RE/Global/Data",
-			"AI_RE/LMK/Public"
-			
+			"AI_RE/LMK/MAKO/Public",
+			"AI_RE/LMK/MAKO/Components/Public"
+
 		});
 
 		// Uncomment if you are using Slate UI

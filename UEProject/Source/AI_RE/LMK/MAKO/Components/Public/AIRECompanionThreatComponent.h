@@ -45,6 +45,7 @@ private:
 		NoPlayer,
 		OutsideDetectionDistance,
 		OutsidePlayerChaseDistance,
+		CompanionDisabled,
 		DetectionStopped
 	};
 

@@ -119,6 +119,9 @@ void FAIRECompanionContextEvaluator::UpdateContext(FStateTreeExecutionContext& C
 
 	if (IsValid(InstanceData.CompanionCharacter))
 	{
+		InstanceData.bIsDisabledRequested = InstanceData.bIsDisabledRequested
+			|| InstanceData.CompanionCharacter->IsAbilitySystemDisabled();
+
 		const UAIRECompanionConfigDataAsset* CompanionConfig = InstanceData.CompanionCharacter->GetCompanionConfig();
 		if (IsValid(CompanionConfig))
 		{

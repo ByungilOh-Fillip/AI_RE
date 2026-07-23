@@ -24,7 +24,7 @@ struct FAIRECompanionTestFixtureResult
 	TArray<FString> CompilerMessages;
 };
 
-/** Project-scoped MCP tools for behavior inputs that still use the temporary Level Blueprint fixture. */
+/** Project-scoped MCP tools for temporary behavior and Companion GAS Level Blueprint inputs. */
 UCLASS(BlueprintType)
 class AIRESTATETREEMCPTOOLSET_API UAIRECompanionTestMCPToolset : public UToolsetDefinition
 {
