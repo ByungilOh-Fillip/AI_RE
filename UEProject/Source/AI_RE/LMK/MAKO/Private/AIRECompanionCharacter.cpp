@@ -4,6 +4,7 @@
 #include "AIRECompanionAIController.h"
 #include "AIRECompanionAttributeSet.h"
 #include "AIRECompanionConfigDataAsset.h"
+#include "AIRECompanionEquipmentComponent.h"
 #include "AIRECompanionGameplayTags.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
@@ -33,6 +34,9 @@ AAIRECompanionCharacter::AAIRECompanionCharacter()
 
 	CompanionAttributeSet = CreateDefaultSubobject<UAIRECompanionAttributeSet>(TEXT("CompanionAttributes"));
 	check(CompanionAttributeSet);
+
+	EquipmentComponent = CreateDefaultSubobject<UAIRECompanionEquipmentComponent>(TEXT("Equipment"));
+	check(EquipmentComponent);
 }
 
 UAbilitySystemComponent* AAIRECompanionCharacter::GetAbilitySystemComponent() const
@@ -49,6 +53,11 @@ bool AAIRECompanionCharacter::IsAbilitySystemDisabled() const
 {
 	return IsValid(AbilitySystemComponent)
 		&& AbilitySystemComponent->HasMatchingGameplayTag(AIRECompanionGameplayTags::StateDisabled);
+}
+
+UAIRECompanionEquipmentComponent* AAIRECompanionCharacter::GetEquipmentComponent() const
+{
+	return EquipmentComponent;
 }
 
 FString AAIRECompanionCharacter::GetCompanionId() const
@@ -78,6 +87,13 @@ void AAIRECompanionCharacter::BeginPlay()
 	check(CompanionAttributeSet);
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
 	ResetAttributesToConfiguredDefaults();
+	const UAIRECompanionConfigDataAsset* CompanionConfigData = GetCompanionConfig();
+	if (IsValid(EquipmentComponent) && IsValid(CompanionConfigData))
+	{
+		EquipmentComponent->InitializeEquipment(
+			AbilitySystemComponent,
+			CompanionConfigData->CombatCooldown);
+	}
 	HealthChangedDelegateHandle = AbilitySystemComponent
 		->GetGameplayAttributeValueChangeDelegate(UAIRECompanionAttributeSet::GetHealthAttribute())
 		.AddUObject(this, &AAIRECompanionCharacter::HandleHealthChanged);
@@ -103,6 +119,11 @@ void AAIRECompanionCharacter::BeginPlay()
 
 void AAIRECompanionCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	if (IsValid(EquipmentComponent))
+	{
+		EquipmentComponent->ShutdownEquipment();
+	}
+
 	if (IsValid(AbilitySystemComponent))
 	{
 		if (HealthChangedDelegateHandle.IsValid())

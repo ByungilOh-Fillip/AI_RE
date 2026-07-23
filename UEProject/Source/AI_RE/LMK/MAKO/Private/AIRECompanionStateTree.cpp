@@ -3,10 +3,15 @@
 #include "AIRECompanionAIController.h"
 #include "AIRECompanionCharacter.h"
 #include "AIRECompanionConfigDataAsset.h"
+#include "AIRECompanionEquipmentComponent.h"
+#include "AIRECompanionGameplayTags.h"
 #include "AIRECompanionThreatComponent.h"
+#include "AIREThreatTargetInterface.h"
+#include "AbilitySystemComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Navigation/PathFollowingComponent.h"
 #include "StateTreeExecutionContext.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogAIRECompanionStateTree, Log, All);
@@ -56,10 +61,14 @@ void FAIRECompanionContextEvaluator::TreeStop(FStateTreeExecutionContext& Contex
 	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
 	InstanceData.PlayerPawn = nullptr;
 	InstanceData.ThreatTarget = nullptr;
+	InstanceData.EquipmentComponent = nullptr;
+	InstanceData.AbilitySystemComponent = nullptr;
 	InstanceData.DistanceToPlayer = 0.0f;
 	InstanceData.MovementSpeed = 0.0f;
 	InstanceData.FollowStopDistance = 0.0f;
 	InstanceData.ReturnStartDistance = 0.0f;
+	InstanceData.CombatDistance = 0.0f;
+	InstanceData.CombatCooldown = 0.0f;
 	InstanceData.bHasPlayer = false;
 	InstanceData.bShouldFollow = false;
 	InstanceData.bShouldReturn = false;
@@ -85,10 +94,14 @@ void FAIRECompanionContextEvaluator::UpdateContext(FStateTreeExecutionContext& C
 	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
 	InstanceData.PlayerPawn = nullptr;
 	InstanceData.ThreatTarget = nullptr;
+	InstanceData.EquipmentComponent = nullptr;
+	InstanceData.AbilitySystemComponent = nullptr;
 	InstanceData.DistanceToPlayer = 0.0f;
 	InstanceData.MovementSpeed = 0.0f;
 	InstanceData.FollowStopDistance = 0.0f;
 	InstanceData.ReturnStartDistance = 0.0f;
+	InstanceData.CombatDistance = 0.0f;
+	InstanceData.CombatCooldown = 0.0f;
 	InstanceData.bHasPlayer = false;
 	InstanceData.bShouldFollow = false;
 	InstanceData.bShouldReturn = false;
@@ -119,6 +132,10 @@ void FAIRECompanionContextEvaluator::UpdateContext(FStateTreeExecutionContext& C
 
 	if (IsValid(InstanceData.CompanionCharacter))
 	{
+		InstanceData.EquipmentComponent =
+			InstanceData.CompanionCharacter->GetEquipmentComponent();
+		InstanceData.AbilitySystemComponent =
+			InstanceData.CompanionCharacter->GetAbilitySystemComponent();
 		InstanceData.bIsDisabledRequested = InstanceData.bIsDisabledRequested
 			|| InstanceData.CompanionCharacter->IsAbilitySystemDisabled();
 
@@ -128,6 +145,8 @@ void FAIRECompanionContextEvaluator::UpdateContext(FStateTreeExecutionContext& C
 			InstanceData.MovementSpeed = CompanionConfig->MovementSpeed;
 			InstanceData.FollowStopDistance = CompanionConfig->FollowStopDistance;
 			InstanceData.ReturnStartDistance = CompanionConfig->ReturnStartDistance;
+			InstanceData.CombatDistance = CompanionConfig->CombatDistance;
+			InstanceData.CombatCooldown = CompanionConfig->CombatCooldown;
 
 			const UWorld* World = InstanceData.CompanionCharacter->GetWorld();
 			APawn* CurrentPlayerPawn = IsValid(World) ? UGameplayStatics::GetPlayerPawn(World, 0) : nullptr;
@@ -258,4 +277,205 @@ void FAIRECompanionBehaviorDebugTask::ExitState(
 		*GetNameSafe(InstanceData.TargetActor),
 		*StaticEnum<EStateTreeRunStatus>()->GetNameStringByValue(static_cast<int64>(Transition.CurrentRunStatus)),
 		InstanceData.bOwnsMovementRequest ? TEXT("StateExit") : TEXT("None"));
+}
+
+FAIRECompanionEngageThreatTask::FAIRECompanionEngageThreatTask()
+{
+	bShouldCallTick = true;
+	bShouldStateChangeOnReselect = false;
+}
+
+EStateTreeRunStatus FAIRECompanionEngageThreatTask::EnterState(
+	FStateTreeExecutionContext& Context,
+	const FStateTreeTransitionResult&) const
+{
+	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+	if (!IsValid(InstanceData.CompanionController)
+		|| !IsValid(InstanceData.EquipmentComponent)
+		|| !IsValid(InstanceData.AbilitySystemComponent)
+		|| !FMath::IsFinite(InstanceData.CombatDistance)
+		|| InstanceData.CombatDistance < 0.0f
+		|| !FMath::IsFinite(InstanceData.CombatCooldown)
+		|| InstanceData.CombatCooldown < 0.0f)
+	{
+		UE_LOG(
+			LogAIRECompanionStateTree,
+			Warning,
+			TEXT("Engage Threat received invalid component or combat tuning bindings."));
+		return EStateTreeRunStatus::Failed;
+	}
+
+	InstanceData.ActiveTarget = InstanceData.ThreatTarget;
+	InstanceData.RetryTimeRemaining = 0.0f;
+	InstanceData.bMoveRequested = false;
+	UE_LOG(
+		LogAIRECompanionStateTree,
+		Log,
+		TEXT("Companion threat engagement started. Companion=%s Target=%s"),
+		*GetNameSafe(InstanceData.CompanionController->GetPawn()),
+		*GetNameSafe(InstanceData.ThreatTarget));
+	return EStateTreeRunStatus::Running;
+}
+
+EStateTreeRunStatus FAIRECompanionEngageThreatTask::Tick(
+	FStateTreeExecutionContext& Context,
+	const float DeltaTime) const
+{
+	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+	if (!IsValid(InstanceData.CompanionController)
+		|| !IsValid(InstanceData.EquipmentComponent)
+		|| !IsValid(InstanceData.AbilitySystemComponent))
+	{
+		CancelOwnedRequests(InstanceData);
+		return EStateTreeRunStatus::Failed;
+	}
+
+	if (InstanceData.ActiveTarget.Get() != InstanceData.ThreatTarget)
+	{
+		CancelOwnedRequests(InstanceData);
+		InstanceData.ActiveTarget = InstanceData.ThreatTarget;
+		InstanceData.RetryTimeRemaining = 0.0f;
+	}
+
+	APawn* CompanionPawn = InstanceData.CompanionController->GetPawn();
+	AActor* TargetActor = InstanceData.ActiveTarget.Get();
+	if (!IsValid(CompanionPawn) || !IsTargetUsable(TargetActor))
+	{
+		CancelOwnedRequests(InstanceData);
+		return EStateTreeRunStatus::Running;
+	}
+
+	const bool bAttackActive = InstanceData.AbilitySystemComponent->HasMatchingGameplayTag(
+		AIRECompanionGameplayTags::StateActionAttacking);
+	InstanceData.RetryTimeRemaining = FMath::Max(
+		0.0f,
+		InstanceData.RetryTimeRemaining - DeltaTime);
+	if (InstanceData.bMoveRequested
+		&& InstanceData.CompanionController->GetMoveStatus()
+			!= EPathFollowingStatus::Moving)
+	{
+		InstanceData.bMoveRequested = false;
+	}
+
+	if (!IsTargetInRange(*CompanionPawn, *TargetActor, InstanceData.CombatDistance))
+	{
+		if (!bAttackActive
+			&& !InstanceData.bMoveRequested
+			&& InstanceData.RetryTimeRemaining <= 0.0f)
+		{
+			const EPathFollowingRequestResult::Type MoveResult =
+				InstanceData.CompanionController->MoveToActor(
+					TargetActor,
+					InstanceData.CombatDistance);
+			InstanceData.bMoveRequested =
+				MoveResult == EPathFollowingRequestResult::RequestSuccessful;
+			if (MoveResult == EPathFollowingRequestResult::Failed)
+			{
+				InstanceData.RetryTimeRemaining = InstanceData.CombatCooldown;
+			}
+		}
+		return EStateTreeRunStatus::Running;
+	}
+
+	if (InstanceData.bMoveRequested)
+	{
+		InstanceData.CompanionController->StopMovement();
+		InstanceData.bMoveRequested = false;
+	}
+
+	if (bAttackActive)
+	{
+		return EStateTreeRunStatus::Running;
+	}
+
+	if (InstanceData.RetryTimeRemaining > 0.0f)
+	{
+		return EStateTreeRunStatus::Running;
+	}
+
+	FGameplayEventData AttackRequest;
+	AttackRequest.EventTag = AIRECompanionGameplayTags::EventAttackRequest;
+	AttackRequest.Instigator = CompanionPawn;
+	AttackRequest.Target = TargetActor;
+	AttackRequest.EventMagnitude = InstanceData.CombatDistance;
+	const int32 ActivatedAbilityCount =
+		InstanceData.AbilitySystemComponent->HandleGameplayEvent(
+		AIRECompanionGameplayTags::EventAttackRequest,
+		&AttackRequest);
+	UE_LOG(
+		LogAIRECompanionStateTree,
+		Verbose,
+		TEXT("Companion attack requested. Target=%s ActivatedAbilities=%d RetryDelay=%.2f"),
+		*GetNameSafe(TargetActor),
+		ActivatedAbilityCount,
+		InstanceData.CombatCooldown);
+	InstanceData.RetryTimeRemaining = InstanceData.CombatCooldown;
+	return EStateTreeRunStatus::Running;
+}
+
+void FAIRECompanionEngageThreatTask::ExitState(
+	FStateTreeExecutionContext& Context,
+	const FStateTreeTransitionResult& Transition) const
+{
+	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
+	CancelOwnedRequests(InstanceData);
+	UE_LOG(
+		LogAIRECompanionStateTree,
+		Log,
+		TEXT("Companion threat engagement ended. Target=%s RunStatus=%s"),
+		*GetNameSafe(InstanceData.ActiveTarget.Get()),
+		*StaticEnum<EStateTreeRunStatus>()->GetNameStringByValue(
+			static_cast<int64>(Transition.CurrentRunStatus)));
+	InstanceData.ActiveTarget.Reset();
+	InstanceData.RetryTimeRemaining = 0.0f;
+}
+
+bool FAIRECompanionEngageThreatTask::IsTargetUsable(const AActor* TargetActor)
+{
+	return IsValid(TargetActor)
+		&& TargetActor->GetClass()->ImplementsInterface(
+			UAIREThreatTargetInterface::StaticClass())
+		&& IAIREThreatTargetInterface::Execute_IsAliveThreatTarget(
+			const_cast<AActor*>(TargetActor));
+}
+
+bool FAIRECompanionEngageThreatTask::IsTargetInRange(
+	const APawn& CompanionPawn,
+	const AActor& TargetActor,
+	const float CombatDistance)
+{
+	const float HorizontalDistance = FVector::Dist2D(
+		CompanionPawn.GetActorLocation(),
+		TargetActor.GetActorLocation());
+	const float EffectiveDistance = FMath::Max(
+		0.0f,
+		HorizontalDistance
+			- CompanionPawn.GetSimpleCollisionRadius()
+			- TargetActor.GetSimpleCollisionRadius());
+	return EffectiveDistance <= CombatDistance;
+}
+
+void FAIRECompanionEngageThreatTask::CancelOwnedRequests(
+	FInstanceDataType& InstanceData)
+{
+	if (IsValid(InstanceData.CompanionController))
+	{
+		InstanceData.CompanionController->StopMovement();
+	}
+	InstanceData.bMoveRequested = false;
+
+	if (!IsValid(InstanceData.EquipmentComponent)
+		|| !IsValid(InstanceData.AbilitySystemComponent))
+	{
+		return;
+	}
+
+	const FGameplayAbilitySpecHandle AttackAbilityHandle =
+		InstanceData.EquipmentComponent->FindGrantedAbilityHandle(
+			AIRECompanionGameplayTags::AbilityCombatBasicAttack);
+	if (AttackAbilityHandle.IsValid())
+	{
+		InstanceData.AbilitySystemComponent->CancelAbilityHandle(
+			AttackAbilityHandle);
+	}
 }
