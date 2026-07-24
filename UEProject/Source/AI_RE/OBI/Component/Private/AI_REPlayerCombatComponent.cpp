@@ -1,6 +1,6 @@
 // Copyright MixUpProject. All Rights Reserved.
 
-#include "PlayerCombatComponent.h"
+#include "AI_REPlayerCombatComponent.h"
 
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
@@ -8,18 +8,19 @@
 #include "GameFramework/Actor.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
+#include "AI_REHarvestDamageTarget.h"
 
-UPlayerCombatComponent::UPlayerCombatComponent()
+UAI_REPlayerCombatComponent::UAI_REPlayerCombatComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
-void UPlayerCombatComponent::BeginPlay()
+void UAI_REPlayerCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
-void UPlayerCombatComponent::TryStartPrimaryAction()
+void UAI_REPlayerCombatComponent::TryStartPrimaryAction()
 {
 	if (bIsActionActive) return;
 
@@ -36,7 +37,7 @@ void UPlayerCombatComponent::TryStartPrimaryAction()
 	}
 }
 
-void UPlayerCombatComponent::TryStopPrimaryAction()
+void UAI_REPlayerCombatComponent::TryStopPrimaryAction()
 {
 	bIsActionActive = false;
 	
@@ -46,7 +47,7 @@ void UPlayerCombatComponent::TryStopPrimaryAction()
 	}
 }
 
-void UPlayerCombatComponent::PerformTraceHit()
+void UAI_REPlayerCombatComponent::PerformTraceHit()
 {
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
 	if (!OwnerPawn) return;
@@ -74,8 +75,11 @@ void UPlayerCombatComponent::PerformTraceHit()
 			DrawDebugLine(GetWorld(), TraceStart, HitResult.ImpactPoint, FColor::Red, false, 2.0f);
 			DrawDebugPoint(GetWorld(), HitResult.ImpactPoint, 10.0f, FColor::Green, false, 2.0f);
 
-			// Apply simple damage (later connect to harvest interfaces or health components)
-			// ...
+			// Apply harvest damage
+			if (HitActor->Implements<UAI_REHarvestDamageTarget>())
+			{
+				IAI_REHarvestDamageTarget::Execute_ApplyHarvestDamage(HitActor, BaseDamage, OwnerPawn);
+			}
 			
 			OnPrimaryActionHit.Broadcast(HitActor);
 		}

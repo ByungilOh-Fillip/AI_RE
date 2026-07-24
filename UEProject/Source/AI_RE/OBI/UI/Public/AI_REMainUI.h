@@ -1,4 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -27,9 +27,20 @@ private:
 	
 	UFUNCTION(BlueprintCallable)
 	void UpdateHungerBar(float Current, float Max);
+
+	UFUNCTION(BlueprintCallable)
+	void UpdateThirstyBar(float Current, float Max);
+
+	UFUNCTION()
+	void RefreshQuickSlots();
 	
 	// 타이머를 켜고 끌 때 필요한 리모콘(핸들)
 	FTimerHandle HPSmoothTimerHandle;
+
+	TWeakObjectPtr<class UAI_REPlayerInventoryComponent> InventoryComp;
+
+	UPROPERTY()
+	TArray<class UAI_REInventorySlotUI*> QuickSlotWidgets;
 	
 protected:
 	UPROPERTY(meta=(BindWidget))
@@ -40,6 +51,18 @@ protected:
 	
 	UPROPERTY(meta=(BindWidget))
 	TObjectPtr<UAI_REStatePointBar> HungerBar;
+
+	UPROPERTY(meta=(BindWidget))
+	TObjectPtr<UAI_REStatePointBar> ThirstyBar;
+
+	UPROPERTY(meta=(BindWidgetOptional))
+	TObjectPtr<class UUniformGridPanel> QuickSlotGrid;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "QuickSlot")
+	TSubclassOf<class UAI_REInventorySlotUI> SlotWidgetClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "QuickSlot")
+	int32 QuickSlotCount = 4;
 	
 public:
 	UFUNCTION(BlueprintCallable)

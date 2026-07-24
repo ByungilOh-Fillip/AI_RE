@@ -1,4 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -17,12 +17,10 @@ class AI_RE_API UAI_REStatePointBar : public UUserWidget
 	GENERATED_BODY()
 	
 private:
-	float TargetPercent;
-	float CurrentPercent;
+	float TargetPercent = 1.0f;
+	float CurrentPercent = 1.0f;
+	bool bIsSmoothing = false;
 	
-	FTimerHandle SmoothTimerHandle;
-	
-	void SmoothBar();
 	
 protected:
 	UPROPERTY(meta=(BindWidget))
@@ -32,7 +30,9 @@ protected:
 	TObjectPtr<class UMaterialInterface> CustomBarMaterial;
 	
 	virtual void NativePreConstruct() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	
 public:
 	void SetTargetPercent(float NewPercent);
+	void SetPercentInstantly(float NewPercent);
 };

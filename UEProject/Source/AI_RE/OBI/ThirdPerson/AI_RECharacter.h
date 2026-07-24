@@ -8,8 +8,8 @@
 #include "AI_RECharacter.generated.h"
 
 class UAI_REMainUI;
-class UPlayerCombatComponent;
-class UPlayerInventoryComponent;
+class UAI_REPlayerCombatComponent;
+class UAI_REPlayerInventoryComponent;
 class UAI_REStatusComponent;
 class UAI_RESkillComponent;
 class USpringArmComponent;
@@ -54,6 +54,10 @@ protected:
 	UPROPERTY(EditAnywhere, Category="Input")
 	UInputAction* MouseLookAction;
 
+	/** Interact Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* InteractAction;
+
 public:
 
 	/** Constructor */
@@ -71,6 +75,9 @@ protected:
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
+
+	/** Called for interaction input */
+	void DoInteract(const FInputActionValue& Value);
 
 public:
 
@@ -110,6 +117,9 @@ private:
 	UFUNCTION(BlueprintCallable, Category="Input")
 	void StopSprint();
 	
+	UFUNCTION(BlueprintCallable, Category="Input")
+	void ToggleInventory();
+	
 protected:
 	// UI
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
@@ -118,10 +128,19 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
 	TObjectPtr<UAI_REMainUI> MainUIInstance;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<class UAI_REInventoryUI> InventoryUIClass;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
+	TObjectPtr<class UAI_REInventoryUI> InventoryUIInstance;
 	
 	// 스프린트 (달리기) IA
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> SprintAction;
+	
+	// 인벤토리 (토글) IA
+	UPROPERTY(EditAnywhere, Category="Input")
+	TObjectPtr<UInputAction> InventoryAction;
 	
 	
 	// 상태 컴포넌트 (체력, 스태미나, 배고픔 등 통합)
@@ -133,10 +152,10 @@ protected:
 	TObjectPtr<UAI_RESkillComponent> SkillComponent;
 	// 인벤토리 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player Components")
-	TObjectPtr<UPlayerInventoryComponent> InventoryComponent;
+	TObjectPtr<UAI_REPlayerInventoryComponent> InventoryComponent;
 	// 전투/액션 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Player Components") 
-	TObjectPtr<UPlayerCombatComponent> CombatComponent;
+	TObjectPtr<UAI_REPlayerCombatComponent> CombatComponent;
 
 public:
 	
@@ -145,8 +164,8 @@ public:
 	// FOCEINLINE -> Function Call 방식이 아니라 사용 위치에서 코드를 받아 붙여넣어(inline) 실행
 	FORCEINLINE TObjectPtr<UAI_REStatusComponent> GetStatusComponent() const { return StatusComponent; }
 	FORCEINLINE TObjectPtr<UAI_RESkillComponent> GetSkillComponent() const { return SkillComponent; }
-	FORCEINLINE TObjectPtr<UPlayerInventoryComponent> GetInventoryComponent() const { return InventoryComponent; }
-	FORCEINLINE TObjectPtr<UPlayerCombatComponent> GetCombatComponent() const { return CombatComponent; }
+	FORCEINLINE TObjectPtr<UAI_REPlayerInventoryComponent> GetInventoryComponent() const { return InventoryComponent; }
+	FORCEINLINE TObjectPtr<UAI_REPlayerCombatComponent> GetCombatComponent() const { return CombatComponent; }
 	
 };
 

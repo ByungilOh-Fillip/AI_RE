@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "PlayerInventoryComponent.generated.h"
+#include "AI_REPlayerInventoryComponent.generated.h"
 
 USTRUCT(BlueprintType)
 struct FInventoryItemStack
@@ -24,15 +24,21 @@ struct FInventoryItemStack
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FInventoryChangedSignature);
 
 UCLASS(ClassGroup = (Player), meta = (BlueprintSpawnableComponent))
-class AI_RE_API UPlayerInventoryComponent : public UActorComponent
+class AI_RE_API UAI_REPlayerInventoryComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:
-	UPlayerInventoryComponent();
+	UAI_REPlayerInventoryComponent();
 
 	UPROPERTY(BlueprintAssignable, Category = "Inventory|Events")
 	FInventoryChangedSignature OnInventoryChanged;
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	bool HasItem(FName ItemId, int32 Amount = 1) const;
+	
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	bool SwapSlots(int32 SlotIndexA, int32 SlotIndexB);
 
 	UFUNCTION(BlueprintCallable, Category = "Inventory")
 	bool AddItem(FName ItemId, int32 Count);
@@ -51,6 +57,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Inventory")
 	bool IsInventoryFull() const;
+	
+	UFUNCTION(BlueprintPure, Category = "Inventory")
+	bool IsSlotIndexValid(int32 SlotIndex) const;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Inventory")
 	int32 MaxSlots = 30;

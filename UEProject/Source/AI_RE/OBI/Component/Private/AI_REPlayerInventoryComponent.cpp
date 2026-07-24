@@ -1,19 +1,29 @@
 // Copyright MixUpProject. All Rights Reserved.
 
-#include "PlayerInventoryComponent.h"
+#include "AI_REPlayerInventoryComponent.h"
 #include "Engine/World.h"
 
-UPlayerInventoryComponent::UPlayerInventoryComponent()
+UAI_REPlayerInventoryComponent::UAI_REPlayerInventoryComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
-void UPlayerInventoryComponent::BeginPlay()
+void UAI_REPlayerInventoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
-bool UPlayerInventoryComponent::AddItem(FName ItemId, int32 Count)
+bool UAI_REPlayerInventoryComponent::HasItem(FName ItemId, int32 Amount) const
+{
+	return GetItemCount(ItemId) >= Amount;
+}
+
+bool UAI_REPlayerInventoryComponent::SwapSlots(int32 SlotIndexA, int32 SlotIndexB)
+{
+	return MoveItemSlot(SlotIndexA, SlotIndexB);
+}
+
+bool UAI_REPlayerInventoryComponent::AddItem(FName ItemId, int32 Count)
 {
 	if (ItemId.IsNone() || Count <= 0) return false;
 
@@ -51,7 +61,7 @@ bool UPlayerInventoryComponent::AddItem(FName ItemId, int32 Count)
 	return RemainingCount <= 0;
 }
 
-bool UPlayerInventoryComponent::ConsumeItem(FName ItemId, int32 Count)
+bool UAI_REPlayerInventoryComponent::ConsumeItem(FName ItemId, int32 Count)
 {
 	if (ItemId.IsNone() || Count <= 0) return false;
 	if (GetItemCount(ItemId) < Count) return false;
@@ -76,9 +86,9 @@ bool UPlayerInventoryComponent::ConsumeItem(FName ItemId, int32 Count)
 	return true;
 }
 
-bool UPlayerInventoryComponent::MoveItemSlot(int32 FromSlotIndex, int32 ToSlotIndex)
+bool UAI_REPlayerInventoryComponent::MoveItemSlot(int32 FromSlotIndex, int32 ToSlotIndex)
 {
-	if (FromSlotIndex == ToSlotIndex || FromSlotIndex < 0 || ToSlotIndex < 0 || FromSlotIndex >= MaxSlots || ToSlotIndex >= MaxSlots)
+	if (FromSlotIndex == ToSlotIndex || !IsSlotIndexValid(FromSlotIndex) || !IsSlotIndexValid(ToSlotIndex))
 		return false;
 
 	FInventoryItemStack* FromStack = FindStackBySlot(FromSlotIndex);
@@ -114,7 +124,7 @@ bool UPlayerInventoryComponent::MoveItemSlot(int32 FromSlotIndex, int32 ToSlotIn
 	return true;
 }
 
-bool UPlayerInventoryComponent::DropItemFromSlot(int32 SlotIndex, int32 Count)
+bool UAI_REPlayerInventoryComponent::DropItemFromSlot(int32 SlotIndex, int32 Count)
 {
 	FInventoryItemStack* Stack = FindStackBySlot(SlotIndex);
 	if (!Stack || Stack->ItemId.IsNone() || Stack->Count <= 0) return false;
@@ -133,7 +143,7 @@ bool UPlayerInventoryComponent::DropItemFromSlot(int32 SlotIndex, int32 Count)
 	return true;
 }
 
-int32 UPlayerInventoryComponent::GetItemCount(FName ItemId) const
+int32 UAI_REPlayerInventoryComponent::GetItemCount(FName ItemId) const
 {
 	int32 TotalCount = 0;
 	for (const FInventoryItemStack& Stack : Items)
@@ -143,32 +153,40 @@ int32 UPlayerInventoryComponent::GetItemCount(FName ItemId) const
 	return TotalCount;
 }
 
-bool UPlayerInventoryComponent::IsInventoryFull() const
+bool UAI_REPlayerInventoryComponent::IsInventoryFull() const
 {
 	if (FindFirstEmptySlotIndex() != INDEX_NONE) return false;
 	
 	for (const FInventoryItemStack& Stack : Items)
 	{
-		if (Stack.Count < GetMaxStackForItem(Stack.ItemId)) return false;
+		// 퀵슬롯(100번대)이 아닌 기본 인벤토리만 풀 상태인지 체크할 수도 있지만, 일단 전체 아이템 기준
+		if (Stack.SlotIndex >= 0 && Stack.SlotIndex < MaxSlots && Stack.Count < GetMaxStackForItem(Stack.ItemId)) return false;
 	}
 	return true;
 }
 
-FInventoryItemStack* UPlayerInventoryComponent::FindStackBySlot(int32 SlotIndex)
+bool UAI_REPlayerInventoryComponent::IsSlotIndexValid(int32 SlotIndex) const
+{
+	// 0 ~ MaxSlots-1: 일반 인벤토리 슬롯
+	// 100 ~ 110: 퀵슬롯
+	return (SlotIndex >= 0 && SlotIndex < MaxSlots) || (SlotIndex >= 100 && SlotIndex < 110);
+}
+
+FInventoryItemStack* UAI_REPlayerInventoryComponent::FindStackBySlot(int32 SlotIndex)
 {
 	return Items.FindByPredicate([SlotIndex](const FInventoryItemStack& Stack) { return Stack.SlotIndex == SlotIndex; });
 }
 
-int32 UPlayerInventoryComponent::FindFirstEmptySlotIndex() const
+int32 UAI_REPlayerInventoryComponent::FindFirstEmptySlotIndex() const
 {
 	for (int32 i = 0; i < MaxSlots; ++i)
 	{
-		if (!const_cast<UPlayerInventoryComponent*>(this)->FindStackBySlot(i)) return i;
+		if (!const_cast<UAI_REPlayerInventoryComponent*>(this)->FindStackBySlot(i)) return i;
 	}
 	return INDEX_NONE;
 }
 
-int32 UPlayerInventoryComponent::GetMaxStackForItem(FName ItemId) const
+int32 UAI_REPlayerInventoryComponent::GetMaxStackForItem(FName ItemId) const
 {
 	// Default max stack fallback. Hook up to DataAsset later.
 	return 99;
