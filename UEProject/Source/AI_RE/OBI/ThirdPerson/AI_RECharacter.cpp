@@ -11,11 +11,16 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "AI_RE.h"
-#include "PlayerCombatComponent.h"
-#include "PlayerInventoryComponent.h"
-#include "StatusComponent.h"
-#include "SkillComponent.h"
+#include "AI_REMainUI.h"
+#include "AI_REInventoryUI.h"
+#include "AI_REPlayerCombatComponent.h"
+#include "AI_REPlayerInventoryComponent.h"
+#include "AI_REStatusComponent.h"
+#include "AI_RESkillComponent.h"
+#include "Blueprint/UserWidget.h"
 #include "Engine/Engine.h"
+#include "../../Global/Interfaces/Public/AI_REInteractableInterface.h"
+#include "Engine/OverlapResult.h"
 
 AAI_RECharacter::AAI_RECharacter()
 {
@@ -53,10 +58,10 @@ AAI_RECharacter::AAI_RECharacter()
 
 	// Component Define
 	
-	StatusComponent = CreateDefaultSubobject<UStatusComponent>(TEXT("StatusComponent"));
-	SkillComponent = CreateDefaultSubobject<USkillComponent>(TEXT("SkillComponent"));
-	InventoryComponent = CreateDefaultSubobject<UPlayerInventoryComponent>(TEXT("InventoryComponent"));
-	CombatComponent = CreateDefaultSubobject<UPlayerCombatComponent>(TEXT("CombatComponent"));
+	StatusComponent = CreateDefaultSubobject<UAI_REStatusComponent>(TEXT("StatusComponent"));
+	SkillComponent = CreateDefaultSubobject<UAI_RESkillComponent>(TEXT("SkillComponent"));
+	InventoryComponent = CreateDefaultSubobject<UAI_REPlayerInventoryComponent>(TEXT("PlayerInventoryComponent"));
+	CombatComponent = CreateDefaultSubobject<UAI_REPlayerCombatComponent>(TEXT("CombatComponent"));
 	
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
@@ -81,6 +86,17 @@ void AAI_RECharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		// Sprint 
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &AAI_RECharacter::StartSprint);
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &AAI_RECharacter::StopSprint);
+
+		// Inventory
+		if (InventoryAction)
+		{
+			EnhancedInputComponent->BindAction(InventoryAction, ETriggerEvent::Started, this, &AAI_RECharacter::ToggleInventory);
+		}
+
+		if (InteractAction)
+		{
+			EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &AAI_RECharacter::DoInteract);
+		}
 	}
 	else
 	{
@@ -155,7 +171,7 @@ void AAI_RECharacter::StartSprint()
 	if (StatusComponent->CurrentSP > 10.f)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("On Start Sprint"));
-		GetCharacterMovement() -> MaxWalkSpeed = 800.f;
+		GetCharacterMovement() -> MaxWalkSpeed = 1000.f;
 		bIsSprint = true;
 	}
 }
@@ -167,5 +183,87 @@ void AAI_RECharacter::StopSprint()
 	bIsSprint = false;
 }
 
+void AAI_RECharacter::ToggleInventory()
+{
+	if (!InventoryUIInstance && InventoryUIClass)
+	{
+		InventoryUIInstance = CreateWidget<UAI_REInventoryUI>(GetWorld(), InventoryUIClass);
+		if (InventoryUIInstance)
+		{
+			InventoryUIInstance->InitializeInventory(InventoryComponent);
+		}
+	}
 
+	if (InventoryUIInstance)
+	{
+		APlayerController* PC = Cast<APlayerController>(GetController());
+		
+		if (InventoryUIInstance->IsInViewport())
+		{
+			InventoryUIInstance->RemoveFromParent();
+			if (PC)
+			{
+				FInputModeGameOnly InputMode;
+				PC->SetInputMode(InputMode);
+				PC->SetShowMouseCursor(false);
+			}
+		}
+		else
+		{
+			InventoryUIInstance->AddToViewport(10);
+			if (PC)
+			{
+				FInputModeGameAndUI InputMode;
+				InputMode.SetWidgetToFocus(InventoryUIInstance->TakeWidget());
+				PC->SetInputMode(InputMode);
+				PC->SetShowMouseCursor(true);
+			}
+		}
+	}
+}
 
+void AAI_RECharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	if (MainUIClass != nullptr)
+	{
+		MainUIInstance = CreateWidget<UAI_REMainUI>(GetWorld(), MainUIClass);
+		if (MainUIInstance)
+		{
+			MainUIInstance->AddToViewport();
+			MainUIInstance->InitializeHUD(StatusComponent);
+		}
+	}
+}
+
+void AAI_RECharacter::DoInteract(const FInputActionValue& Value)
+{
+	FVector Start = GetActorLocation();
+	FVector End = Start + (GetActorForwardVector() * 200.0f); // 2미터 앞
+
+	// 단순 충돌 체크를 위한 오버랩 감지 (실제 게임에선 SphereTrace 등을 씁니다)
+	TArray<FOverlapResult> OverlapResults;
+	FCollisionShape Sphere = FCollisionShape::MakeSphere(200.0f);
+	
+	bool bHit = GetWorld()->OverlapMultiByChannel(
+		OverlapResults, 
+		Start, 
+		FQuat::Identity, 
+		ECC_Visibility, 
+		Sphere
+	);
+
+	if (bHit)
+	{
+		for (const FOverlapResult& Result : OverlapResults)
+		{
+			AActor* HitActor = Result.GetActor();
+			if (HitActor && HitActor->Implements<UAI_REInteractableInterface>())
+			{
+				IAI_REInteractableInterface::Execute_Interact(HitActor, this);
+				break; // 한 번에 하나만 상호작용
+			}
+		}
+	}
+}
