@@ -2,7 +2,8 @@
 
 #include "AI_REGameMode.h"
 
+
 AAI_REGameMode::AAI_REGameMode()
 {
-	// stub
+
 }
