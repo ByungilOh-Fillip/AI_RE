@@ -7,6 +7,8 @@
   "required": [
     "schema_version",
     "request_id",
+    "current_message_id",
+    "allowed_event_ids",
     "interaction_mode",
     "companion_id",
     "user_message",
@@ -16,8 +18,21 @@
     "allowed_commands"
   ],
   "properties": {
-    "schema_version": { "type": "integer", "const": 1 },
+    "schema_version": { "type": "integer", "const": 2 },
     "request_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "current_message_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Current user Message ID. Memory candidates may cite it as a source."
+    },
+    "allowed_event_ids": {
+      "type": "array",
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1, "maxLength": 128 },
+      "description": "Backend-verified Event IDs that memory candidates may cite."
+    },
     "interaction_mode": { "type": "string", "enum": ["InGame", "Offline"] },
     "companion_id": { "type": "string", "minLength": 1, "maxLength": 128 },
     "user_message": { "type": "string", "minLength": 1, "maxLength": 2000 },
@@ -25,6 +40,24 @@
     "game_context": {
       "type": "object",
       "maxProperties": 32,
+      "propertyNames": {
+        "not": {
+          "enum": [
+            "authorization",
+            "access_token",
+            "connection_string",
+            "database_url",
+            "device_id",
+            "device_token",
+            "pairing_code",
+            "password",
+            "profile_id",
+            "runtime_secret",
+            "secret",
+            "token"
+          ]
+        }
+      },
       "description": "Purpose-limited, validated context. It must not contain credentials, database keys, or device identity."
     },
     "retrieved_memories": {

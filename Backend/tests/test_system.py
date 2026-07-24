@@ -22,4 +22,8 @@ def test_capabilities_report_foundation() -> None:
     response = client.get("/api/v1/system/capabilities")
 
     assert response.status_code == 200
-    assert response.json()["capabilities"] == ["Health", "MockFoundation"]
+    assert response.json()["capabilities"] == [
+        "Health",
+        "MockChat",
+        "SQLitePersistence",
+    ]

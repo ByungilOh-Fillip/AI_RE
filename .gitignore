@@ -48,6 +48,9 @@ env.bak/
 .ruff_cache/
 .mypy_cache/
 .uv-cache/
+Backend/*.db
+Backend/*.db-shm
+Backend/*.db-wal
 *.log
 *.model
 *.safetensors

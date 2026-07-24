@@ -16,6 +16,46 @@
           "maxItems": 32,
           "uniqueItems": true,
           "items": { "type": "string", "minLength": 1, "maxLength": 128 }
+        },
+        "game_context": {
+          "type": "object",
+          "maxProperties": 32,
+          "propertyNames": {
+            "not": {
+              "enum": [
+                "authorization",
+                "access_token",
+                "connection_string",
+                "database_url",
+                "device_id",
+                "device_token",
+                "pairing_code",
+                "password",
+                "profile_id",
+                "runtime_secret",
+                "secret",
+                "token"
+              ]
+            }
+          },
+          "description": "Purpose-limited InGame context. Offline requests must use an empty object."
+        },
+        "allowed_commands": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "Command.Follow",
+              "Command.HoldPosition",
+              "Command.ReturnToPlayer",
+              "Command.EngageTarget",
+              "Command.DistractTarget",
+              "Command.MoveToLocation",
+              "Command.CancelCurrent"
+            ]
+          }
         }
       }
     },
@@ -37,7 +77,9 @@
           "time_context": {
             "properties": { "source": { "const": "RealWorld" } },
             "required": ["source"]
-          }
+          },
+          "game_context": { "maxProperties": 0 },
+          "allowed_commands": { "maxItems": 0 }
         }
       }
     }
