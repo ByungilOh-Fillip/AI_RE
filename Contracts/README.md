@@ -7,6 +7,7 @@ This directory is the executable source of truth for data exchanged between the 
 - `openapi.yaml`: HTTP API contract.
 - `schemas/`: reusable JSON Schema definitions.
 - `fixtures/`: normal and failure examples used by every implementation.
+- `schemas/websocket-chat-frame.schema.json`: WebSocket Auth와 Chat Frame envelope.
 
 ## Rules
 
@@ -40,3 +41,14 @@ This directory is the executable source of truth for data exchanged between the 
 ## Initial scope
 
 The contract covers health, capabilities, persistent Device Pairing, Chat, Event, Command candidates, Memory candidates, the AIService boundary, and the shared error envelope.
+
+## WebSocket Chat
+
+- Native GameClients connect to `/api/v1/game/chat` with a bearer token in the
+  WebSocket handshake `Authorization` header.
+- Browser WebClients connect to `/api/v1/mobile/chat` and send
+  `{ "type": "auth", "token": "..." }` as the first frame.
+- Chat messages use `chat`, `chat_response`, and `error` envelopes whose payloads
+  reuse the existing Chat Request, Chat Response, and Error Envelope schemas.
+- Unknown frame types are ignored for forward compatibility.
+- HTTP `POST /api/v1/chat` remains available during migration.

@@ -162,3 +162,26 @@ def test_device_response_fixture_matches_schema(
     )
 
     validator.validate(load_json(FIXTURES_ROOT / "devices" / fixture_name))
+
+
+@pytest.mark.parametrize(
+    ("fixture_name", "definition_name"),
+    [
+        ("websocket-mobile-auth.valid.json", "mobileAuthFrame"),
+        ("websocket-ingame-request.valid.json", "chatRequestFrame"),
+        ("websocket-response.valid.json", "chatResponseFrame"),
+        ("websocket-error.valid.json", "errorFrame"),
+    ],
+)
+def test_websocket_chat_fixture_matches_schema(
+    fixture_name: str,
+    definition_name: str,
+) -> None:
+    schema = load_json(SCHEMAS_ROOT / "websocket-chat-frame.schema.json")
+    validator = Draft202012Validator(
+        {"$ref": f"{schema['$id']}#/$defs/{definition_name}"},
+        registry=build_registry(),
+        format_checker=FormatChecker(),
+    )
+
+    validator.validate(load_json(FIXTURES_ROOT / "chat" / fixture_name))
