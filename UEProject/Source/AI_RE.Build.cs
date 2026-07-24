@@ -18,7 +18,8 @@ public class AI_RE : ModuleRules
 			"StateTreeModule",
 			"GameplayStateTreeModule",
 			"UMG",
-			"Slate"
+			"Slate",
+			"GameplayTags"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });
@@ -33,13 +34,15 @@ public class AI_RE : ModuleRules
 			"AI_RE/OBI/Component/Public",
 			"AI_RE/OBI/UI/Public",
 			"AI_RE/Global/Components/Public",
+			"AI_RE/Global/Actors/Public",
+			"AI_RE/Global/Interfaces/Public",
 			"AI_RE/Global/Data",
 			"AI_RE/Work/LMK/Public"
 			
 		});
 
 		// Uncomment if you are using Slate UI
-		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
 
 		// Uncomment if you are using online features 
 		// PrivateDependencyModuleNames.Add("OnlineSubsystem");
