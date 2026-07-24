@@ -28,14 +28,14 @@ namespace
 	const FFrameRate AnimationDisplayRate(20, 1);
 	const FFrameRate AnimationTickResolution(24000, 1);
 
-	FAIREWidgetMutationResult MakeFailure(const FString& Message)
+	FAIREWidgetMutationResult MakeWidgetFailure(const FString& Message)
 	{
 		FAIREWidgetMutationResult Result;
 		Result.Message = Message;
 		return Result;
 	}
 
-	FAIREWidgetMutationResult MakeSuccess(const FString& Message)
+	FAIREWidgetMutationResult MakeWidgetSuccess(const FString& Message)
 	{
 		FAIREWidgetMutationResult Result;
 		Result.bSuccess = true;
@@ -229,17 +229,17 @@ FAIREWidgetMutationResult UAIREUMGMCPToolset::CreateOrReplaceSlideFadeAnimation(
 	FString Error;
 	if (!TryGetEditableWidgetBlueprint(WidgetBlueprint, Error))
 	{
-		return MakeFailure(Error);
+		return MakeWidgetFailure(Error);
 	}
 	if (AnimationName.IsNone() || WidgetName.IsNone())
 	{
-		return MakeFailure(TEXT("AnimationName and WidgetName are required."));
+		return MakeWidgetFailure(TEXT("AnimationName and WidgetName are required."));
 	}
 	if (!FMath::IsFinite(DurationSeconds)
 		|| DurationSeconds < MinAnimationDurationSeconds
 		|| DurationSeconds > MaxAnimationDurationSeconds)
 	{
-		return MakeFailure(TEXT("DurationSeconds must be finite and between 0.01 and 60."));
+		return MakeWidgetFailure(TEXT("DurationSeconds must be finite and between 0.01 and 60."));
 	}
 	if (!FMath::IsFinite(StartTranslationX)
 		|| !FMath::IsFinite(EndTranslationX)
@@ -250,13 +250,13 @@ FAIREWidgetMutationResult UAIREUMGMCPToolset::CreateOrReplaceSlideFadeAnimation(
 		|| EndOpacity < 0.0f
 		|| EndOpacity > 1.0f)
 	{
-		return MakeFailure(TEXT("Translation values must be finite and opacity must be between 0 and 1."));
+		return MakeWidgetFailure(TEXT("Translation values must be finite and opacity must be between 0 and 1."));
 	}
 
 	UWidget* Widget = WidgetBlueprint->WidgetTree->FindWidget(WidgetName);
 	if (!IsValid(Widget))
 	{
-		return MakeFailure(
+		return MakeWidgetFailure(
 			FString::Printf(TEXT("Widget '%s' was not found."), *WidgetName.ToString()));
 	}
 
@@ -298,7 +298,7 @@ FAIREWidgetMutationResult UAIREUMGMCPToolset::CreateOrReplaceSlideFadeAnimation(
 		EndTranslationX);
 
 	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(WidgetBlueprint);
-	return MakeSuccess(
+	return MakeWidgetSuccess(
 		FString::Printf(
 			TEXT("Animation '%s' now targets '%s'. Compile and save explicitly."),
 			*AnimationName.ToString(),
@@ -312,13 +312,13 @@ FAIREWidgetMutationResult UAIREUMGMCPToolset::RemoveWidgetAnimation(
 	FString Error;
 	if (!TryGetEditableWidgetBlueprint(WidgetBlueprint, Error))
 	{
-		return MakeFailure(Error);
+		return MakeWidgetFailure(Error);
 	}
 
 	UWidgetAnimation* Animation = FindAnimation(*WidgetBlueprint, AnimationName);
 	if (!IsValid(Animation))
 	{
-		return MakeFailure(
+		return MakeWidgetFailure(
 			FString::Printf(TEXT("Animation '%s' was not found."), *AnimationName.ToString()));
 	}
 
@@ -333,7 +333,7 @@ FAIREWidgetMutationResult UAIREUMGMCPToolset::RemoveWidgetAnimation(
 		REN_DontCreateRedirectors | REN_NonTransactional);
 	Animation->MarkAsGarbage();
 	FBlueprintEditorUtils::MarkBlueprintAsStructurallyModified(WidgetBlueprint);
-	return MakeSuccess(
+	return MakeWidgetSuccess(
 		FString::Printf(
 			TEXT("Animation '%s' was removed. Compile and save explicitly."),
 			*AnimationName.ToString()));
@@ -345,20 +345,20 @@ FAIREWidgetMutationResult UAIREUMGMCPToolset::ValidateAndCompileWidgetBlueprint(
 	FString Error;
 	if (!TryGetEditableWidgetBlueprint(WidgetBlueprint, Error))
 	{
-		return MakeFailure(Error);
+		return MakeWidgetFailure(Error);
 	}
 
 	for (const UWidgetAnimation* Animation : WidgetBlueprint->Animations)
 	{
 		if (!IsValid(Animation) || !IsValid(Animation->MovieScene))
 		{
-			return MakeFailure(TEXT("Widget Blueprint contains an invalid animation."));
+			return MakeWidgetFailure(TEXT("Widget Blueprint contains an invalid animation."));
 		}
 		for (const FWidgetAnimationBinding& Binding : Animation->AnimationBindings)
 		{
 			if (!IsValid(WidgetBlueprint->WidgetTree->FindWidget(Binding.WidgetName)))
 			{
-				return MakeFailure(
+				return MakeWidgetFailure(
 					FString::Printf(
 						TEXT("Animation '%s' references missing widget '%s'."),
 						*Animation->GetName(),
@@ -392,16 +392,16 @@ FAIREWidgetMutationResult UAIREUMGMCPToolset::SaveWidgetBlueprint(
 	FString Error;
 	if (!TryGetEditableWidgetBlueprint(WidgetBlueprint, Error))
 	{
-		return MakeFailure(Error);
+		return MakeWidgetFailure(Error);
 	}
 	if (WidgetBlueprint->Status == BS_Dirty || WidgetBlueprint->Status == BS_Error)
 	{
-		return MakeFailure(
+		return MakeWidgetFailure(
 			TEXT("Widget Blueprint requires a successful compile before saving."));
 	}
 	if (GEditor == nullptr)
 	{
-		return MakeFailure(TEXT("Unreal Editor is unavailable."));
+		return MakeWidgetFailure(TEXT("Unreal Editor is unavailable."));
 	}
 
 	UEditorAssetSubsystem* AssetSubsystem =
@@ -409,9 +409,9 @@ FAIREWidgetMutationResult UAIREUMGMCPToolset::SaveWidgetBlueprint(
 	if (!IsValid(AssetSubsystem)
 		|| !AssetSubsystem->SaveLoadedAsset(WidgetBlueprint, true))
 	{
-		return MakeFailure(TEXT("Widget Blueprint could not be saved."));
+		return MakeWidgetFailure(TEXT("Widget Blueprint could not be saved."));
 	}
-	return MakeSuccess(TEXT("Widget Blueprint saved successfully."));
+	return MakeWidgetSuccess(TEXT("Widget Blueprint saved successfully."));
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -30,14 +30,14 @@ namespace
 		}
 	}
 
-	bool SerializeObject(const TSharedRef<FJsonObject>& Object, FString& OutJson)
+	bool SerializeChatObject(const TSharedRef<FJsonObject>& Object, FString& OutJson)
 	{
 		OutJson.Reset();
 		const TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&OutJson);
 		return FJsonSerializer::Serialize(Object, Writer);
 	}
 
-	bool DeserializeObject(const FString& Json, TSharedPtr<FJsonObject>& OutObject)
+	bool DeserializeChatObject(const FString& Json, TSharedPtr<FJsonObject>& OutObject)
 	{
 		const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Json);
 		return FJsonSerializer::Deserialize(Reader, OutObject) && OutObject.IsValid();
@@ -205,7 +205,7 @@ bool FAIREChatJsonAdapter::BuildInGameRequest(
 	Payload->SetArrayField(
 		TEXT("allowed_commands"),
 		TArray<TSharedPtr<FJsonValue>>());
-	if (!SerializeObject(Payload, OutHttpBody))
+	if (!SerializeChatObject(Payload, OutHttpBody))
 	{
 		OutError = TEXT("Could not serialize the Chat request.");
 		return false;
@@ -214,7 +214,7 @@ bool FAIREChatJsonAdapter::BuildInGameRequest(
 	const TSharedRef<FJsonObject> Frame = MakeShared<FJsonObject>();
 	Frame->SetStringField(TEXT("type"), TEXT("chat"));
 	Frame->SetObjectField(TEXT("payload"), Payload);
-	if (!SerializeObject(Frame, OutWebSocketFrame))
+	if (!SerializeChatObject(Frame, OutWebSocketFrame))
 	{
 		OutError = TEXT("Could not serialize the WebSocket Chat frame.");
 		return false;
@@ -228,7 +228,7 @@ FAIREParsedChatFrame FAIREChatJsonAdapter::ParseWebSocketFrame(
 	const FString& ExpectedRequestId)
 {
 	TSharedPtr<FJsonObject> FrameObject;
-	if (!DeserializeObject(Message, FrameObject))
+	if (!DeserializeChatObject(Message, FrameObject))
 	{
 		return InvalidFrame(ExpectedRequestId, TEXT("MalformedJson"), TEXT("WebSocket response is not valid JSON."));
 	}
@@ -263,7 +263,7 @@ FAIREParsedChatFrame FAIREChatJsonAdapter::ParseHttpBody(
 	const bool bIsErrorResponse)
 {
 	TSharedPtr<FJsonObject> Body;
-	if (!DeserializeObject(Message, Body))
+	if (!DeserializeChatObject(Message, Body))
 	{
 		return InvalidFrame(ExpectedRequestId, TEXT("MalformedJson"), TEXT("HTTP response is not valid JSON."));
 	}
