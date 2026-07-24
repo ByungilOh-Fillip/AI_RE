@@ -28,7 +28,20 @@ void UAIREChatHUDWidget::NativeConstruct()
 		{
 			if (AAIRECompanionCharacter* Companion = *It; IsValid(Companion))
 			{
-				InitializeChatRuntime(Companion->GetChatComponent());
+				UAIRECompanionChatComponent* CompanionChat =
+					Companion->GetChatComponent();
+				if (IsValid(CompanionChat)
+					&& !CompanionChat->HasInGameContext())
+				{
+					FAIREInGameChatContext DefaultContext;
+					DefaultContext.SaveSlotId = TEXT("test-slot-01");
+					DefaultContext.Day = 1;
+					DefaultContext.Hour = 12.0f;
+					DefaultContext.Period =
+						EAIREGameWorldPeriod::Afternoon;
+					CompanionChat->ConfigureInGameContext(DefaultContext);
+				}
+				InitializeChatRuntime(CompanionChat);
 				break;
 			}
 		}

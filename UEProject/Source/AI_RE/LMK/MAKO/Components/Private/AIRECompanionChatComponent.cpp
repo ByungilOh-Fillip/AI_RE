@@ -301,6 +301,11 @@ EAIREChatRequestState UAIRECompanionChatComponent::GetRequestState() const
 	return RequestState;
 }
 
+bool UAIRECompanionChatComponent::HasInGameContext() const
+{
+	return bHasChatContext;
+}
+
 void UAIRECompanionChatComponent::BeginPlay()
 {
 	Super::BeginPlay();

@@ -44,6 +44,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "AIRE|Companion|Chat")
 	EAIREChatRequestState GetRequestState() const;
 
+	UFUNCTION(BlueprintPure, Category = "AIRE|Companion|Chat")
+	bool HasInGameContext() const;
+
 	UPROPERTY(BlueprintAssignable, Category = "AIRE|Companion|Chat")
 	FAIREChatConnectionStateChanged OnConnectionStateChanged;
 
