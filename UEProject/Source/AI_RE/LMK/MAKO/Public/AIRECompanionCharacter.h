@@ -7,6 +7,7 @@
 
 class UAIRECompanionConfigDataAsset;
 class UAIRECompanionAttributeSet;
+class UAIRECompanionChatComponent;
 class UAIRECompanionEquipmentComponent;
 class UAbilitySystemComponent;
 struct FOnAttributeChangeData;
@@ -29,6 +30,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "AIRE|Companion|Equipment")
 	UAIRECompanionEquipmentComponent* GetEquipmentComponent() const;
+
+	UFUNCTION(BlueprintPure, Category = "AIRE|Companion|Chat")
+	UAIRECompanionChatComponent* GetChatComponent() const;
 
 	bool ResetAttributesToConfiguredDefaults();
 
@@ -54,6 +58,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AIRE|Companion|Equipment", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UAIRECompanionEquipmentComponent> EquipmentComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AIRE|Companion|Chat", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UAIRECompanionChatComponent> ChatComponent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AIRE|Companion|Configuration", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UAIRECompanionConfigDataAsset> CompanionConfig;

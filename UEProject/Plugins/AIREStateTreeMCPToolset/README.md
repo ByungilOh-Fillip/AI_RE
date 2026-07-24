@@ -1,6 +1,6 @@
 # AIRE StateTree MCP Toolset
 
-Editor-only UE 5.8 MCP tools for project-owned StateTree assets.
+Editor-only UE 5.8 MCP tools for project-owned StateTree and UMG assets.
 
 ## Safety boundary
 
@@ -9,6 +9,11 @@ Editor-only UE 5.8 MCP tools for project-owned StateTree assets.
 - Mutations mark the StateTree dirty but do not save it.
 - `ValidateAndCompile` and `SaveStateTree` are separate explicit calls.
 - `SaveStateTree` rejects assets that still require compilation.
+- UMG tree creation and property editing use UE's built-in `UMGToolSet` and
+  `EditorToolset.ObjectTools`.
+- `AIREUMGMCPToolset` adds project-scoped slide/fade animation creation,
+  inspection, explicit compilation, and saving.
+- UMG mutations reject assets outside `/Game/Work/LMK/`.
 
 ## Workflow
 
@@ -20,3 +25,11 @@ Editor-only UE 5.8 MCP tools for project-owned StateTree assets.
 6. Call `SaveStateTree` only after the compiled structure has been inspected.
 
 Named state and node creation is retry-safe: a matching sibling state or a matching named node is returned instead of duplicated.
+
+## UMG workflow
+
+1. Use `UMGToolSet.CreateWidgetBlueprint` and `AddWidget` to build the tree.
+2. Use `EditorToolset.ObjectTools` to inspect and set exact widget and slot properties.
+3. Use `AIREUMGMCPToolset.CreateOrReplaceSlideFadeAnimation` for horizontal
+   translation and opacity tracks.
+4. Inspect, compile, and save through explicit lifecycle calls.

@@ -3,7 +3,7 @@
 	"Version": 1,
 	"VersionName": "1.0",
 	"FriendlyName": "AIRE StateTree MCP Toolset",
-	"Description": "Project-scoped MCP tools for StateTree editing and temporary Companion Level Blueprint test fixtures.",
+	"Description": "Project-scoped MCP tools for StateTree, Companion test fixtures, and UMG animation editing.",
 	"Category": "AI",
 	"CreatedBy": "AI_RE",
 	"EditorOnly": true,
@@ -27,6 +27,14 @@
 		},
 		{
 			"Name": "ToolsetRegistry",
+			"Enabled": true
+		},
+		{
+			"Name": "EditorToolset",
+			"Enabled": true
+		},
+		{
+			"Name": "UMGToolSet",
 			"Enabled": true
 		},
 		{

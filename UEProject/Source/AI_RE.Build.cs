@@ -20,11 +20,23 @@ public class AI_RE : ModuleRules
 			"GameplayTasks",
 			"StateTreeModule",
 			"GameplayStateTreeModule",
+			"HTTP",
+			"Json",
 			"UMG",
-			"Slate"
+			"Slate",
+			"WebSockets"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });
+
+		PrivateIncludePaths.AddRange(new string[] {
+			"AI_RE/LMK/MAKO/Private"
+		});
+
+		if (Target.Platform == UnrealTargetPlatform.Win64)
+		{
+			PublicSystemLibraries.Add("Advapi32.lib");
+		}
 
 		PublicIncludePaths.AddRange(new string[] {
 			"AI_RE/OBI/ThirdPerson",
