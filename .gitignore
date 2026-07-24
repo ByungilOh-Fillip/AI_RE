@@ -87,3 +87,5 @@ Thumbs.db
 # =========================
 .agents/
 AGENTS.md
+.gemini/settings.json
+UEProject/.gemini/settings.json

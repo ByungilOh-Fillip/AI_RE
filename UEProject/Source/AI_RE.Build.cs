@@ -15,14 +15,28 @@ public class AI_RE : ModuleRules
 			"InputCore",
 			"EnhancedInput",
 			"AIModule",
+			"GameplayAbilities",
+			"GameplayTags",
+			"GameplayTasks",
 			"StateTreeModule",
 			"GameplayStateTreeModule",
+			"HTTP",
+			"Json",
 			"UMG",
 			"Slate",
-			"GameplayTags"
+			"WebSockets"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });
+
+		PrivateIncludePaths.AddRange(new string[] {
+			"AI_RE/LMK/MAKO/Private"
+		});
+
+		if (Target.Platform == UnrealTargetPlatform.Win64)
+		{
+			PublicSystemLibraries.Add("Advapi32.lib");
+		}
 
 		PublicIncludePaths.AddRange(new string[] {
 			"AI_RE/OBI/ThirdPerson",
@@ -37,8 +51,9 @@ public class AI_RE : ModuleRules
 			"AI_RE/Global/Actors/Public",
 			"AI_RE/Global/Interfaces/Public",
 			"AI_RE/Global/Data",
-			"AI_RE/Work/LMK/Public"
-			
+			"AI_RE/LMK/MAKO/Public",
+			"AI_RE/LMK/MAKO/Components/Public"
+
 		});
 
 		// Uncomment if you are using Slate UI
