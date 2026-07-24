@@ -4,6 +4,7 @@
 #include "AIRECompanionAIController.h"
 #include "AIRECompanionAttributeSet.h"
 #include "AIRECompanionConfigDataAsset.h"
+#include "AIRECompanionChatComponent.h"
 #include "AIRECompanionEquipmentComponent.h"
 #include "AIRECompanionGameplayTags.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -37,6 +38,9 @@ AAIRECompanionCharacter::AAIRECompanionCharacter()
 
 	EquipmentComponent = CreateDefaultSubobject<UAIRECompanionEquipmentComponent>(TEXT("Equipment"));
 	check(EquipmentComponent);
+
+	ChatComponent = CreateDefaultSubobject<UAIRECompanionChatComponent>(TEXT("Chat"));
+	check(ChatComponent);
 }
 
 UAbilitySystemComponent* AAIRECompanionCharacter::GetAbilitySystemComponent() const
@@ -58,6 +62,11 @@ bool AAIRECompanionCharacter::IsAbilitySystemDisabled() const
 UAIRECompanionEquipmentComponent* AAIRECompanionCharacter::GetEquipmentComponent() const
 {
 	return EquipmentComponent;
+}
+
+UAIRECompanionChatComponent* AAIRECompanionCharacter::GetChatComponent() const
+{
+	return ChatComponent;
 }
 
 FString AAIRECompanionCharacter::GetCompanionId() const

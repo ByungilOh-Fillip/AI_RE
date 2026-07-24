@@ -22,8 +22,12 @@ public class AIREStateTreeMCPToolset : ModuleRules
 			{
 				"BlueprintGraph",
 				"InputCore",
+				"MovieScene",
+				"MovieSceneTracks",
 				"PropertyBindingUtils",
 				"StateTreeEditorModule",
+				"UMG",
+				"UMGEditor",
 				"UnrealEd"
 			}
 		);
