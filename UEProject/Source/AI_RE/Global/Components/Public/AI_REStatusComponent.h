@@ -22,23 +22,49 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
     // ----------------------------------------------------
+    // Survival Settings
+    // ----------------------------------------------------
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Status|Survival")
+	float SurvivalTickRate = 2.0f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Status|Survival")
+	float BaseHungerDepleteRate = 0.3f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Status|Survival")
+	float BaseThirstyDepleteRate = 0.5f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Status|Survival")
+	float RunMultiplier = 2.0f;
+
+	FTimerHandle SurvivalTimerHandle;
+
+    // ----------------------------------------------------
     // Stats
     // ----------------------------------------------------
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Status|HP")
 	float MaxHP;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status|HP")
 	float CurrentHP;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Status|SP")
 	float MaxSP;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status|SP")
 	float CurrentSP;
-
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Status|Hunger")
 	float MaxHunger;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Status|Hunger")
 	float CurrentHunger;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Status|Thirsty")
+	float MaxThirsty;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Status|Thirsty")
+	float CurrentThirsty;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Status|Combat")
 	float Attack;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Status|Combat")
@@ -59,6 +85,9 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Status|Events")
 	FOnStatChangedSignature OnHungerChanged;
 
+	UPROPERTY(BlueprintAssignable, Category = "Status|Events")
+	FOnStatChangedSignature OnThirstyChanged;
+
     // ----------------------------------------------------
     // Functions
     // ----------------------------------------------------
@@ -67,4 +96,8 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Status|Functions")
     void ApplyDamage(float Amount);
+
+private:
+	void HandleSurvivalStats();
+	bool IsOwnerRunning() const;
 };
