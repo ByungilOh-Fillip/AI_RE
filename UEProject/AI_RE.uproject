@@ -44,6 +44,10 @@
 			"Enabled": true
 		},
 		{
+			"Name": "EditorToolset",
+			"Enabled": true
+		},
+		{
 			"Name": "GameplayAbilities",
 			"Enabled": true
 		},

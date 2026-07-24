@@ -280,11 +280,19 @@ DELETE /api/v1/devices/{device_id}
 ### Chat and Events
 
 ```text
+WS   /api/v1/game/chat
+WS   /api/v1/mobile/chat
 POST /api/v1/chat
 POST /api/v1/events
 ```
 
-InGame과 Offline 대화는 별도 Endpoint가 아니라 `interaction_mode`로 구분합니다.
+WebSocket Chat endpoint는 인증 방식 때문에 Device 종류별로 나뉩니다.
+GameClient는 Handshake `Authorization` Header를 사용하고 Mobile Client는 첫
+`auth` Frame을 사용합니다. 인증 이후 Chat 의미와 payload는
+`interaction_mode`로 구분하며, HTTP Chat은 수동 fallback과 마이그레이션을
+위해 유지합니다. 상세 Frame 계약은
+[`WEBSOCKET_CHAT_PROTOCOL_HANDOFF.md`](./WEBSOCKET_CHAT_PROTOCOL_HANDOFF.md)를
+따릅니다.
 
 ### Memories
 
@@ -517,7 +525,7 @@ Task로 수행합니다.
 - LLM 모델과 Runtime 확정
 - Vector DB
 - Redis와 다중 Worker
-- WebSocket Push
+- 비요청형 WebSocket Push와 Streaming
 - 음성 STT/TTS
 - 멀티모달 이미지
 - 오프라인 자원 정산

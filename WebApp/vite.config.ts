@@ -4,8 +4,14 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     proxy: {
-      "/health": "http://127.0.0.1:8000",
-      "/api": "http://127.0.0.1:8000",
+      "/health": {
+        target: "https://api.mtvs2026.work",
+        changeOrigin: true,
+      },
+      "/api": {
+        target: "https://api.mtvs2026.work",
+        changeOrigin: true,
+      },
     },
   },
 });
